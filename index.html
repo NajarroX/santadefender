@@ -117,7 +117,6 @@
         // Constantes del juego
         const PLAYER_SPEED = 4;
         const BULLET_SPEED = 8;
-        const ENEMY_SPEED = 2;
         const JOYSTICK_RADIUS = 75; 
         const PHRASE_DURATION = 300; 
         const PHRASE_INTERVAL = 8000; 
@@ -126,6 +125,14 @@
         const ENEMIES_FOR_POWERUP = 10;
         const POWERUP_DURATION = 300; 
         
+        // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
+        const ENEMY_TYPES = [
+            { speed: 1.5, color: '#666666', spawnWeight: 60 }, // Lento y común (60%)
+            { speed: 2.5, color: '#990000', spawnWeight: 30 }, // Rápido (30%)
+            { speed: 1.0, color: '#000066', spawnWeight: 10 }  // Tanque (Lento, 10%)
+        ];
+        let spawnRate = 0.02; // Probabilidad de spawn por frame
+
         // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
             x: BASE_W / 2,
@@ -133,12 +140,15 @@
             size: 20, 
             color: 'red',
             health: 10,
+            maxHealth: 10, // NUEVO: Máxima salud de Santa
             dirX: 0,
             dirY: 0,
             shooting: false,
             lastShotTime: 0,
             fireRate: 200,
-            frame: 0 
+            frame: 0,
+            invincible: false, // NUEVO: Estado de invencibilidad
+            invincibleTimer: 0 // NUEVO: Contador de invencibilidad
         };
 
         const tree = {
@@ -162,6 +172,7 @@
             duration: PHRASE_DURATION 
         };
 
+        const invincibilityPhrase = "¡Soy invencible, como el espíritu capitalista... por un momento!";
         const sarcasticPhrases = [
             { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!", "¡Estos muchachos son peores que el tráfico en Black Friday!", "¡La codicia no los hace inmortales, chicos!"] },
             { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!", "¡Mis elfos son más eficientes que esta fuerza de trabajo!", "¡Deberían estar invirtiendo en protección, no en deforestación!"] },
@@ -323,9 +334,9 @@
         // --- 5. LÓGICA DEL JUEGO (UPDATE) ---
 
         function handleShooting(deltaTime) {
-            const currentFireRate = (powerUpTimer > 0) ? 50 : santa.fireRate;
+            const currentFireRate = (santa.invincibleTimer > 0) ? 50 : santa.fireRate;
             
-            if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (powerUpTimer > 0)) {
+            if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (santa.invincibleTimer > 0)) {
                 const currentTime = Date.now();
                 if (currentTime - santa.lastShotTime > currentFireRate) {
                     const dx = tree.x - santa.x;
@@ -337,8 +348,8 @@
                     bullets.push({
                         x: santa.x,
                         y: santa.y,
-                        size: (powerUpTimer > 0) ? 12 : 8,
-                        color: (powerUpTimer > 0) ? '#00FFFF' : 'yellow',
+                        size: (santa.invincibleTimer > 0) ? 12 : 8,
+                        color: (santa.invincibleTimer > 0) ? '#00FFFF' : 'yellow',
                         dirX: nx,
                         dirY: ny
                     });
@@ -376,14 +387,27 @@
         }
         
         function updatePowerUp(deltaTime) {
-            if (powerUpTimer > 0) {
-                powerUpTimer -= deltaTime; 
+            // Invencibilidad y Power-Up
+            if (santa.invincibleTimer > 0) {
+                santa.invincibleTimer -= (deltaTime / (1000 / 60)); 
+                if (santa.invincibleTimer <= 0) {
+                    santa.invincible = false;
+                    santa.invincibleTimer = 0;
+                    dialogue.message = "¡Se agotó la invencibilidad!";
+                    dialogue.duration = PHRASE_DURATION;
+                }
             }
             
             if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
-                powerUpTimer = POWERUP_DURATION * (1000 / 60); 
+                // El power-up ahora RELLENA LA SALUD de Santa
+                santa.health = santa.maxHealth; 
+                
+                // Activa la invencibilidad
+                santa.invincible = true;
+                santa.invincibleTimer = POWERUP_DURATION; 
+                
                 enemiesDefeatedSincePowerUp = 0; 
-                dialogue.message = "¡FRENESÍ NAVIDEÑO ACTIVADO! ¡FUERA CAPITALISTAS!";
+                dialogue.message = invincibilityPhrase;
                 dialogue.duration = PHRASE_DURATION;
             }
         }
@@ -417,42 +441,23 @@
                 }
             }
         }
-        function updateEnemies() {
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                const dx = tree.x - enemy.x;
-                const dy = tree.y - enemy.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const nx = dx / dist;
-                const ny = dy / dist;
-                enemy.x += nx * ENEMY_SPEED;
-                enemy.y += ny * ENEMY_SPEED;
-                if (checkCollision(enemy, tree)) {
-                    tree.health -= 1;
-                    enemies.splice(i, 1);
-                    if (tree.health <= 0) {
-                        alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
-                        
-                        // FIX DE VISIBILIDAD DE CONTROLES MÓVILES:
-                        // 1. Cambiar el estado a TITLE
-                        gameState = 'TITLE'; 
-                        
-                        // 2. Resetear variables del juego (resetGame() no afecta la visibilidad del joystick)
-                        resetGame(); 
-                        
-                        // 3. Ocultar los controles explícitamente al volver al título
-                        if (isMobile) {
-                            controls.style.display = 'none';
-                            shootButton.style.display = 'none';
-                        }
+        
+        function spawnEnemies() {
+            if (Math.random() < spawnRate) { 
+                
+                // Lógica de selección de enemigo por peso
+                let totalWeight = ENEMY_TYPES.reduce((sum, type) => sum + type.spawnWeight, 0);
+                let randomValue = Math.random() * totalWeight;
+                let selectedType = ENEMY_TYPES[0];
 
-                        return;
+                for (const type of ENEMY_TYPES) {
+                    randomValue -= type.spawnWeight;
+                    if (randomValue <= 0) {
+                        selectedType = type;
+                        break;
                     }
                 }
-            }
-        }
-        function spawnEnemies() {
-            if (Math.random() < 0.02) { 
+
                 const size = 15;
                 const edge = Math.floor(Math.random() * 4); 
                 let x, y;
@@ -462,9 +467,77 @@
                     case 2: x = Math.random() * W; y = H + size; break;
                     case 3: x = -size; y = Math.random() * H; break;
                 }
-                enemies.push({ x: x, y: y, size: size, color: '#666666' });
+                
+                enemies.push({ 
+                    x: x, 
+                    y: y, 
+                    size: size, 
+                    color: selectedType.color,
+                    speed: selectedType.speed // Velocidad individual
+                });
             }
         }
+
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const dx = tree.x - enemy.x;
+                const dy = tree.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = dx / dist;
+                const ny = dy / dist;
+                
+                // Mover enemigo con su velocidad individual
+                enemy.x += nx * enemy.speed; 
+                enemy.y += ny * enemy.speed;
+                
+                let destroyed = false;
+
+                // LÓGICA DE DAÑO A SANTA CON INVENCIBILIDAD
+                if (checkCollision(enemy, santa)) {
+                    if (!santa.invincible) { // Solo recibe daño si NO es invencible
+                        santa.health -= 1;
+                        explosions.push(new Explosion(enemy.x, enemy.y, 'white'));
+                        
+                        if (santa.health <= 0) {
+                            alert('GAME OVER! Santa ha sido sobrepasado. Puntuación: ' + score);
+                            gameState = 'TITLE';
+                            resetGame();
+                            if (isMobile) {
+                                controls.style.display = 'none';
+                                shootButton.style.display = 'none';
+                            }
+                            return; 
+                        }
+                    } else {
+                        // Si es invencible, solo hay una explosión visual al contacto
+                        explosions.push(new Explosion(enemy.x, enemy.y, '#FF00FF'));
+                    }
+
+                    // El enemigo siempre se destruye al colisionar con Santa
+                    enemies.splice(i, 1);
+                    destroyed = true;
+                }
+                
+                // Lógica de daño al Árbol (Solo si no ha sido destruido al dañar a Santa)
+                if (!destroyed && checkCollision(enemy, tree)) {
+                    tree.health -= 1;
+                    enemies.splice(i, 1);
+                    
+                    if (tree.health <= 0) {
+                        alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
+                        gameState = 'TITLE'; 
+                        resetGame(); 
+                        if (isMobile) {
+                            controls.style.display = 'none';
+                            shootButton.style.display = 'none';
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        
         function updateDialogue(deltaTime) {
             if (dialogue.duration > 0) {
                 dialogue.duration -= (deltaTime / (1000 / 60)); 
@@ -487,9 +560,12 @@
             }
         }
         function checkCollision(objA, objB) {
+            // Esta función maneja la colisión entre Santa/Enemigo/Árbol. 
+            // Para Santa y Enemigos, usan 'size'. Para Árbol, usa 'size' también.
             return objA.x < objB.x + objB.size && objA.x + objA.size > objB.x &&
                    objA.y < objB.y + objB.size && objA.y + objB.size > objB.y;
         }
+
 
         function updateGame(deltaTime) {
             updatePlayerMovement();
@@ -516,7 +592,12 @@
         }
 
         function drawSanta(x, y, size, frame) {
-             const legOffset = (Math.floor(frame) === 0) ? 3 : -3;
+            // NUEVO: Efecto de parpadeo si es invencible
+            if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
+                return; // Ocultar el sprite para un efecto de parpadeo
+            }
+
+            const legOffset = (Math.floor(frame) === 0) ? 3 : -3;
             drawRect(x, y, size, size, 'red');
             drawRect(x, y + 4, size, size / 2, 'white'); 
             drawRect(x, y - 8, size / 2, size / 2, 'white'); 
@@ -572,7 +653,7 @@
         }
         
         function drawGameObjects() {
-            if (powerUpTimer > 0) {
+            if (santa.invincibleTimer > 0) {
                 applyPsychedelicGlitch();
             } else {
                 ctx.filter = 'none';
@@ -601,11 +682,11 @@
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
 
-            if (powerUpTimer > 0) {
+            if (santa.invincibleTimer > 0) {
                 ctx.fillStyle = '#FF00FF';
-                const barWidth = 300 * (powerUpTimer / (POWERUP_DURATION * (1000 / 60)));
+                const barWidth = 300 * (santa.invincibleTimer / POWERUP_DURATION);
                 ctx.fillRect(W / 2 - 150, H - 25, barWidth, 15);
-                drawTitleText(W/2, H-10, "FRENESÍ ACTIVO", 16, '#FF00FF');
+                drawTitleText(W/2, H-10, "INVENCIBLE", 16, '#FF00FF');
             } else {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                 const barWidth = 300 * (enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
@@ -665,12 +746,28 @@
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
             
+            // Puntuación
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             
+            // Salud Santa (Esquina superior derecha) - AHORA CON BARRA
+            const healthRatio = santa.health / santa.maxHealth;
+            const barWidth = 150;
+            const barHeight = 15;
+            const barX = W - barWidth - 10;
+            const barY = 15;
+
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+            ctx.fillStyle = healthRatio > 0.5 ? '#00FF00' : (healthRatio > 0.2 ? '#FFD700' : '#FF0000');
+            ctx.fillRect(barX, barY, barWidth * healthRatio, barHeight);
+
+            ctx.fillStyle = 'white';
             ctx.textAlign = 'right';
-            ctx.fillText(`Salud Santa: ${santa.health}`, W - 10, 30);
+            ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30);
             
+            // Diálogo (si está activo, encima de Santa)
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
@@ -700,6 +797,9 @@
             santa.x = BASE_W / 2;
             santa.y = BASE_H / 2;
             santa.frame = 0;
+            santa.health = santa.maxHealth; // REINICIAR SALUD DE SANTA
+            santa.invincible = false; // RESET INVENCIBILIDAD
+            santa.invincibleTimer = 0; // RESET TIMER
             tree.health = treeHealthMax; 
             score = 0;
             enemies = [];
@@ -710,9 +810,6 @@
             dialogue.message = "¡Feliz Navidad, mis pequeños capitalistas!";
             dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
-            
-            // NO se ocultan aquí. El Game Over se encarga de ocultarlos
-            // al cambiar el gameState a 'TITLE'.
         }
 
         // Iniciar el bucle de juego
