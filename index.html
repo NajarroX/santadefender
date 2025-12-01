@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Santa's Last Stand - Prototype</title>
+    <title>Santa's Last Stand - Prototype v2</title>
     
     <style>
         body {
@@ -144,6 +144,25 @@
         // Enemigos (Empresarios Monstruosos)
         let enemies = [];
         let score = 0;
+        
+        // --- NUEVO: GLOBOS DE DIÁLOGO ---
+        const treeHealthMax = 50;
+        let dialogue = {
+            message: "¡Feliz Navidad, mis pequeños capitalistas!",
+            duration: 180 // frames
+        };
+
+        const sarcasticPhrases = [
+            // >= 80% HP (40-50 HP)
+            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!"] },
+            // 50% - 80% HP (25-39 HP)
+            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!"] },
+            // < 50% HP (1-24 HP)
+            { min: 1, phrases: ["¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", "¡Mi seguro de vida cubre esto, ¿verdad?!", "¡Alguien va a pasar la Navidad en la lista negra!"] }
+        ];
+
+        let timeSinceLastPhrase = 0;
+        const phraseInterval = 10 * 1000; // 10 segundos
 
         // --- 3. MANEJO DE CONTROLES (PC: Teclado) ---
         let keys = {};
@@ -262,9 +281,9 @@
             if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting)) {
                 const currentTime = Date.now();
                 if (currentTime - santa.lastShotTime > santa.fireRate) {
-                    // Crea una bala de regalo (la dirección es siempre hacia el árbol en este prototipo simple)
                     
-                    // Cálculo de la dirección hacia el árbol
+                    // Cálculo de la dirección hacia el árbol (Disparo defensivo)
+                    // Para un Santa más proactivo, podrías disparar hacia el enemigo más cercano!
                     const dx = tree.x - santa.x;
                     const dy = tree.y - santa.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -311,7 +330,7 @@
         }
 
         function spawnEnemies() {
-            if (Math.random() < 0.02) { // Probabilidad de spawn (ajustar dificultad aquí)
+            if (Math.random() < 0.02) { 
                 const size = 15;
                 const edge = Math.floor(Math.random() * 4); // 0=Top, 1=Right, 2=Bottom, 3=Left
                 let x, y;
@@ -339,7 +358,7 @@
                     x: x,
                     y: y,
                     size: size,
-                    color: '#666666' // Gris corporativo
+                    color: '#666666' 
                 });
             }
         }
@@ -370,6 +389,36 @@
                 }
             }
         }
+        
+        function updateDialogue(deltaTime) {
+            // Decrementar duración del diálogo si está activo
+            if (dialogue.duration > 0) {
+                dialogue.duration--;
+            }
+
+            // Chequear si es hora de una nueva frase
+            timeSinceLastPhrase += deltaTime;
+            if (timeSinceLastPhrase > phraseInterval && dialogue.duration <= 0) {
+                
+                let eligiblePhrases = [];
+                
+                // Encontrar el grupo de frases según la salud del árbol
+                for(const group of sarcasticPhrases) {
+                    if (tree.health >= group.min) {
+                        eligiblePhrases = group.phrases;
+                        break;
+                    }
+                }
+                
+                if (eligiblePhrases.length > 0) {
+                    const newPhrase = eligiblePhrases[Math.floor(Math.random() * eligiblePhrases.length)];
+                    dialogue.message = newPhrase;
+                    dialogue.duration = 180; // Mostrar por 3 segundos (asumiendo 60 FPS)
+                    timeSinceLastPhrase = 0;
+                }
+            }
+        }
+
 
         // Función de colisión (caja delimitadora simple)
         function checkCollision(objA, objB) {
@@ -385,6 +434,7 @@
             updateBullets();
             spawnEnemies();
             updateEnemies();
+            updateDialogue(deltaTime); // NUEVO: Actualizar diálogo
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -393,18 +443,31 @@
             ctx.fillStyle = color;
             ctx.fillRect(x - w / 2, y - h / 2, w, h);
         }
+        
+        function drawCircle(x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         function drawTree() {
-            // Tronco (Pixel art minimalista)
+            // Tronco
             drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
+            
             // Copa del árbol (Triángulo)
             ctx.fillStyle = tree.color;
             ctx.beginPath();
-            ctx.moveTo(tree.x, tree.y - tree.size / 2); // Punta
+            ctx.moveTo(tree.x, tree.y - tree.size); // Punta
             ctx.lineTo(tree.x - tree.size, tree.y + tree.size / 2);
             ctx.lineTo(tree.x + tree.size, tree.y + tree.size / 2);
             ctx.closePath();
             ctx.fill();
+
+            // Bolitas Navideñas (Detalle)
+            drawCircle(tree.x - 10, tree.y - 15, 3, 'yellow');
+            drawCircle(tree.x + 15, tree.y, 3, 'red');
+            drawCircle(tree.x - 5, tree.y + 10, 3, 'blue');
 
             // Dibujar salud del árbol
             ctx.fillStyle = 'white';
@@ -416,11 +479,44 @@
         function drawSanta() {
             // Cuerpo (Rojo)
             drawRect(santa.x, santa.y, santa.size, santa.size, santa.color);
-            // Barba (Blanco - para identificarlo)
-            drawRect(santa.x, santa.y + 4, santa.size, santa.size / 3, 'white'); 
+            // Barba (Blanco - más grande)
+            drawRect(santa.x, santa.y + 4, santa.size, santa.size / 2, 'white'); 
             // Sombrero (Blanco/Rojo)
-            drawRect(santa.x, santa.y - 8, santa.size / 2, santa.size / 2, 'white'); 
+            drawRect(santa.x, santa.y - 8, santa.size / 2, santa.size / 2, 'white'); // Pompón
+            drawRect(santa.x, santa.y - 10, santa.size, santa.size / 3, santa.color); // Gorro
+            
+            // Ojos (Negro)
+            drawRect(santa.x - 5, santa.y - 2, 3, 3, 'black');
+            drawRect(santa.x + 5, santa.y - 2, 3, 3, 'black');
+            
+            // Dibujar Globo de Diálogo (si está activo)
+            if (dialogue.duration > 0) {
+                drawDialogueBubble(santa.x, santa.y, dialogue.message);
+            }
         }
+        
+        function drawDialogueBubble(x, y, message) {
+            const padding = 10;
+            ctx.font = '16px monospace';
+            const textMetrics = ctx.measureText(message);
+            const textWidth = textMetrics.width;
+            const textHeight = 16;
+            
+            const bubbleW = textWidth + padding * 2;
+            const bubbleH = textHeight + padding * 2;
+            const bubbleX = x - bubbleW / 2;
+            const bubbleY = y - santa.size - bubbleH - 5; // Arriba de Santa
+            
+            // Dibujar el fondo del globo (blanco)
+            ctx.fillStyle = 'white';
+            ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
+            
+            // Dibujar el texto (negro)
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, x, bubbleY + textHeight + padding - 2);
+        }
+
 
         function drawEnemies() {
             enemies.forEach(e => {
@@ -443,7 +539,7 @@
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             ctx.textAlign = 'right';
-            ctx.fillText(`Salud: ${santa.health}`, W - 10, 30);
+            ctx.fillText(`Salud Santa: ${santa.health}`, W - 10, 30);
             
             if (isMobile) {
                  ctx.textAlign = 'center';
@@ -475,20 +571,23 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            updateGame(deltaTime);
+            // La lógica de actualización ahora usa deltaTime para el diálogo (en milisegundos)
+            updateGame(deltaTime); 
             drawGame();
 
             requestAnimationFrame(gameLoop);
         }
 
         function resetGame() {
-            // Reiniciar variables para un nuevo juego
             santa.x = W / 2;
             santa.y = H / 2;
-            tree.health = 50;
+            tree.health = treeHealthMax; // Usa la constante
             score = 0;
             enemies = [];
             bullets = [];
+            dialogue.message = "¡Feliz Navidad, mis pequeños capitalistas!";
+            dialogue.duration = 180;
+            timeSinceLastPhrase = 0;
         }
 
         // Iniciar el juego
