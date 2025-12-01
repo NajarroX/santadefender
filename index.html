@@ -16,8 +16,7 @@
             align-items: center;
             height: 100vh;
             font-family: monospace;
-            /* Necesario para centrar el canvas y que los controles absolutos funcionen bien */
-            position: relative; 
+            position: relative; /* Necesario para centrar el canvas y que los controles absolutos funcionen bien */
         }
 
         /* Estilo del Canvas Base (relación 800x600) */
@@ -32,7 +31,6 @@
             height: 100%;
             max-width: 100vw;
             max-height: 100vh;
-            /* La relación de aspecto se mantendrá mediante JS y límites */
         }
 
         /* --- Controles Táctiles (Joystick) --- */
@@ -42,8 +40,7 @@
             left: 20px;
             z-index: 10;
             display: none; 
-            /* IMPORTANTE: Posicionamiento fijo o absoluto respecto al viewport */
-            pointer-events: auto;
+            pointer-events: auto; /* Permite interacción */
         }
 
         .joystick-container {
@@ -82,8 +79,8 @@
             cursor: pointer;
             user-select: none;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-            /* IMPORTANTE: Posicionamiento fijo o absoluto respecto al viewport */
             pointer-events: auto;
+            display: none; /* Inicialmente oculto */
         }
     </style>
 </head>
@@ -104,8 +101,8 @@
         const ctx = canvas.getContext('2d');
         const BASE_W = 800; // Ancho base del juego
         const BASE_H = 600; // Alto base del juego
-        let W = BASE_W; // Ancho actual del canvas
-        let H = BASE_H; // Alto actual del canvas
+        let W = BASE_W; 
+        let H = BASE_H;
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         // Estados del Juego
@@ -129,7 +126,7 @@
         const ENEMIES_FOR_POWERUP = 10;
         const POWERUP_DURATION = 300; 
         
-        // --- 2. OBJETOS DEL JUEGO Y ESTADO (Usan BASE_W/H inicialmente) ---
+        // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
             x: BASE_W / 2,
             y: BASE_H / 2,
@@ -215,23 +212,17 @@
             
             let newW, newH;
 
-            // Determinar si la relación de aspecto del viewport es más ancha o más alta que el juego base
             if (viewportW / viewportH > aspectR) {
-                // Ventana más ancha (limitada por la altura)
                 newH = viewportH;
                 newW = viewportH * aspectR;
             } else {
-                // Ventana más alta (limitada por el ancho)
                 newW = viewportW;
                 newH = viewportW / aspectR;
             }
             
-            // Aplicar el nuevo tamaño al canvas (CSS se encargará del resto visual)
             canvas.style.width = newW + 'px';
             canvas.style.height = newH + 'px';
 
-            // Este es el tamaño de dibujo interno del Canvas, NO el tamaño visual en pantalla.
-            // Siempre se mantendrá 800x600 para que las coordenadas de juego sean fijas.
             W = BASE_W;
             H = BASE_H;
             canvas.width = W;
@@ -239,7 +230,6 @@
         }
 
         window.addEventListener('resize', resizeGame);
-        // Llamar una vez al inicio para establecer el tamaño correcto
         resizeGame();
 
 
@@ -264,7 +254,7 @@
             }
         });
         
-        // --- Controles de juego (Joystick y Teclado: se mantienen) ---
+        // --- Controles de juego (Joystick y Teclado) ---
         let keys = {};
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
@@ -281,8 +271,11 @@
                 if (e.button === 0 && gameState === 'PLAYING') santa.shooting = false;
             });
         }
+        
+        let joystickActive = false;
+        let startX, startY;
+
         if (isMobile) {
-            // Lógica del Joystick (Asegúrate de que solo se active en PLAYING)
             joystickContainer.addEventListener('touchstart', (e) => {
                 if (gameState !== 'PLAYING') return;
                 e.preventDefault();
@@ -314,7 +307,6 @@
             joystickContainer.addEventListener('touchend', resetJoystick);
             joystickContainer.addEventListener('touchcancel', resetJoystick);
 
-            // Botón de Disparo
             shootButton.addEventListener('touchstart', (e) => {
                 if (gameState !== 'PLAYING') return;
                 e.preventDefault();
@@ -328,8 +320,8 @@
         }
 
 
-        // --- 5. LÓGICA DEL JUEGO (UPDATE: Sin cambios en coordenadas) ---
-        
+        // --- 5. LÓGICA DEL JUEGO (UPDATE) ---
+
         function handleShooting(deltaTime) {
             const currentFireRate = (powerUpTimer > 0) ? 50 : santa.fireRate;
             
@@ -395,8 +387,7 @@
                 dialogue.duration = PHRASE_DURATION;
             }
         }
-        
-        // ... (updatePlayerMovement, updateEnemies, etc., usan W/H que siempre son 800/600, así que la lógica es robusta)
+
         function updatePlayerMovement() {
             if (!isMobile) {
                 santa.dirX = 0;
@@ -441,7 +432,20 @@
                     enemies.splice(i, 1);
                     if (tree.health <= 0) {
                         alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
-                        resetGame();
+                        
+                        // FIX DE VISIBILIDAD DE CONTROLES MÓVILES:
+                        // 1. Cambiar el estado a TITLE
+                        gameState = 'TITLE'; 
+                        
+                        // 2. Resetear variables del juego (resetGame() no afecta la visibilidad del joystick)
+                        resetGame(); 
+                        
+                        // 3. Ocultar los controles explícitamente al volver al título
+                        if (isMobile) {
+                            controls.style.display = 'none';
+                            shootButton.style.display = 'none';
+                        }
+
                         return;
                     }
                 }
@@ -487,7 +491,6 @@
                    objA.y < objB.y + objB.size && objA.y + objB.size > objB.y;
         }
 
-
         function updateGame(deltaTime) {
             updatePlayerMovement();
             updatePowerUp(deltaTime); 
@@ -499,9 +502,8 @@
             updateDialogue(deltaTime); 
         }
 
-        // --- 6. RENDERIZADO (DRAW: Usa W/H) ---
+        // --- 6. RENDERIZADO (DRAW) ---
 
-        // Helpers de Dibujo (simplificados)
         function drawRect(x, y, w, h, color) {
             ctx.fillStyle = color;
             ctx.fillRect(x - w / 2, y - h / 2, w, h);
@@ -525,47 +527,39 @@
             drawRect(x + 5 - legOffset, y + 8, 4, 4, 'black');
         }
 
-        function drawTitleText(x, y, message, fontSize, color) {
+        function drawTitleText(x, y, message, fontSize, color, align = 'center') {
             ctx.fillStyle = color;
             ctx.font = `${fontSize}px monospace`;
-            ctx.textAlign = 'center';
+            ctx.textAlign = align;
             ctx.fillText(message, x, y);
         }
 
         function drawTitleScreen() {
-            // Fondo de pantalla de título
             ctx.fillStyle = '#003300';
-            ctx.fillRect(0, 0, W, H); // Usa el tamaño del Canvas (800x600)
+            ctx.fillRect(0, 0, W, H);
 
-            // Título Principal (Centrado en W/2)
             drawTitleText(W / 2, H / 2 - 150, "EL SANTA DEFENDER", 60, '#cc0000');
             drawTitleText(W / 2, H / 2 - 80, "La Lucha Contra la Codicia", 24, 'white');
-
-            // Dibujar Santa (Posicionado al 25% del ancho)
             drawSanta(W / 4, H / 2 + 50, 40, 0); 
             drawTitleText(W / 4, H / 2 + 100, "Santa", 20, 'white');
-
-            // Instrucciones dinámicas (Posicionadas al 60% del ancho)
+            
             const instructions = isMobile ? 
                 ["**MOVIL**:", "Joystick Izq: Mover", "Botón FUEGO: Disparar", "Toca la pantalla para JUGAR"] :
                 ["**PC**:", "WASD / Flechas: Mover", "Espacio / Click: Disparar", "Click en la pantalla para JUGAR"];
-
-            ctx.textAlign = 'left';
+            
             let lineY = H / 2 - 50;
-            const lineX = W * 0.6; // 60% del ancho para que se ajuste
+            const lineX = W * 0.6;
 
             instructions.forEach(line => {
                 const color = line.startsWith('**') ? '#ffcc00' : 'white';
                 const text = line.replace(/\*\*/g, '');
-                // Dibujar texto en posición relativa
-                drawTitleText(lineX, lineY, text, 20, color); 
+                drawTitleText(lineX, lineY, text, 20, color, 'left'); 
                 lineY += 30;
             });
 
             drawTitleText(W / 2, H - 50, "¡La Navidad depende de ti!", 24, '#00aa00');
         }
-        
-        // NUEVO: Efecto Glitch Psicodélico
+
         function applyPsychedelicGlitch() {
             ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2); 
             if (Math.random() < 0.5) {
@@ -585,7 +579,6 @@
                 ctx.globalAlpha = 1;
             }
             
-            // 2. Dibujar Título del Nivel (Centrado)
             const titleText = "EL SANTA DEFENDER";
             const fontSize = 48; 
             const titleColor = '#004d00'; 
@@ -597,7 +590,6 @@
             ctx.fillText(titleText, W / 2 - 2, titleY - 2);
             ctx.fillText(titleText, W / 2, titleY);
 
-            // 3. Dibujar Objetos del Juego
             drawTree();
             drawEnemies();
             drawBullets();
@@ -605,12 +597,10 @@
             explosions.forEach(exp => exp.draw());
             drawHUD();
             
-            // 4. Restablecer la transformación y el filtro después de dibujar
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
 
-            // 5. Dibujar indicador de Power-Up (Centrado en W/2)
             if (powerUpTimer > 0) {
                 ctx.fillStyle = '#FF00FF';
                 const barWidth = 300 * (powerUpTimer / (POWERUP_DURATION * (1000 / 60)));
@@ -654,7 +644,6 @@
             });
         }
         
-        // Diálogo ajustado para que use coordenadas relativas
         function drawDialogueBubble(x, y, message) {
             const padding = 10;
             ctx.font = '16px monospace';
@@ -672,20 +661,16 @@
             ctx.fillText(message, x, bubbleY + textHeight + padding - 2);
         }
 
-        // HUD ajustado para usar coordenadas relativas
         function drawHUD() {
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
             
-            // Puntuación (Esquina superior izquierda)
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             
-            // Salud Santa (Esquina superior derecha)
             ctx.textAlign = 'right';
             ctx.fillText(`Salud Santa: ${santa.health}`, W - 10, 30);
             
-            // Diálogo (si está activo, encima de Santa)
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
@@ -699,7 +684,6 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            // Limpiar el canvas antes de dibujar el estado
             ctx.clearRect(0, 0, W, H);
             
             if (gameState === 'TITLE') {
@@ -727,10 +711,8 @@
             dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
             
-             if (isMobile) {
-                controls.style.display = 'none';
-                shootButton.style.display = 'none';
-            }
+            // NO se ocultan aquí. El Game Over se encarga de ocultarlos
+            // al cambiar el gameState a 'TITLE'.
         }
 
         // Iniciar el bucle de juego
