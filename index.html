@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Santa's Last Stand - Prototype v2</title>
+    <title>EL SANTA DEFENDER</title>
     
     <style>
         body {
@@ -21,7 +21,7 @@
         /* Estilo del Canvas */
         #gameCanvas {
             border: 4px solid #cc0000;
-            background-color: #006600; /* Terreno de nieve/bosque */
+            background-color: #006600; /* Terreno de nieve/bosque (Verde Base) */
             touch-action: none; /* Previene el comportamiento por defecto del touch */
         }
 
@@ -102,7 +102,7 @@
         const PLAYER_SPEED = 4;
         const BULLET_SPEED = 8;
         const ENEMY_SPEED = 2;
-        const JOYSTICK_RADIUS = 75; // Mitad del tamaño del contenedor
+        const JOYSTICK_RADIUS = 75; 
 
         // Mostrar/Ocultar controles según el dispositivo
         if (isMobile) {
@@ -115,56 +115,72 @@
 
         // --- 2. OBJETOS DEL JUEGO ---
 
-        // Santa (el Jugador)
         let santa = {
             x: W / 2,
             y: H / 2,
-            size: 20, // Pixel art minimalista
+            size: 20, 
             color: 'red',
             health: 10,
             dirX: 0,
             dirY: 0,
             shooting: false,
             lastShotTime: 0,
-            fireRate: 200 // Disparo cada 200ms
+            fireRate: 200 
         };
 
-        // El Árbol (Objetivo a defender)
         const tree = {
             x: W / 2,
             y: H / 2,
             size: 40,
-            color: '#00aa00', // Verde oscuro
+            color: '#00aa00', 
             health: 50
         };
 
-        // Balas (Regalos)
         let bullets = [];
-
-        // Enemigos (Empresarios Monstruosos)
         let enemies = [];
         let score = 0;
         
-        // --- NUEVO: GLOBOS DE DIÁLOGO ---
+        // --- GLOBOS DE DIÁLOGO MEJORADOS ---
         const treeHealthMax = 50;
+        const PHRASE_DURATION = 300; // 5 segundos a 60 FPS
+        const PHRASE_INTERVAL = 8000; // 8 segundos
+        
         let dialogue = {
             message: "¡Feliz Navidad, mis pequeños capitalistas!",
-            duration: 180 // frames
+            duration: PHRASE_DURATION 
         };
 
         const sarcasticPhrases = [
             // >= 80% HP (40-50 HP)
-            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!"] },
+            { min: 40, phrases: [
+                "¡No me cansaré hasta que mis nietos hereden el negocio!", 
+                "¡Este traje es de marca, no lo ensucies!", 
+                "¡El valor de mercado de este pino es astronómico!",
+                "¡Estos muchachos son peores que el tráfico en Black Friday!",
+                "¡La codicia no los hace inmortales, chicos!"
+            ] },
             // 50% - 80% HP (25-39 HP)
-            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!"] },
+            { min: 25, phrases: [
+                "¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", 
+                "¡Un poco de dolor hará que aprecien más la Navidad.", 
+                "¡Pagaría por un café con estos niveles de adrenalina!",
+                "¡Mis elfos son más eficientes que esta fuerza de trabajo!",
+                "¡Deberían estar invirtiendo en protección, no en deforestación!"
+            ] },
             // < 50% HP (1-24 HP)
-            { min: 1, phrases: ["¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", "¡Mi seguro de vida cubre esto, ¿verdad?!", "¡Alguien va a pasar la Navidad en la lista negra!"] }
+            { min: 1, phrases: [
+                "¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", 
+                "¡Mi seguro de vida cubre esto, ¿verdad?!", 
+                "¡Alguien va a pasar la Navidad en la lista negra!",
+                "¡Si sobrevivo, subiré el precio de los juguetes en un 200%!",
+                "¡Al menos es mejor que la reunión de la junta directiva de enero!"
+            ] }
         ];
 
         let timeSinceLastPhrase = 0;
-        const phraseInterval = 10 * 1000; // 10 segundos
 
-        // --- 3. MANEJO DE CONTROLES (PC: Teclado) ---
+
+        // --- 3. MANEJO DE CONTROLES (PC: Teclado y Mouse) ---
         let keys = {};
 
         if (!isMobile) {
@@ -180,7 +196,7 @@
             });
 
             window.addEventListener('mousedown', (e) => {
-                if (e.button === 0) santa.shooting = true; // Botón izquierdo del mouse
+                if (e.button === 0) santa.shooting = true; 
             });
 
             window.addEventListener('mouseup', (e) => {
@@ -207,21 +223,17 @@
                 if (!joystickActive) return;
                 const touch = e.touches[0];
                 
-                // Cálculo del vector de movimiento
                 let deltaX = touch.clientX - startX;
                 let deltaY = touch.clientY - startY;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                // Normalizar y limitar al radio del joystick
                 if (distance > JOYSTICK_RADIUS) {
                     deltaX = (deltaX / distance) * JOYSTICK_RADIUS;
                     deltaY = (deltaY / distance) * JOYSTICK_RADIUS;
                 }
 
-                // Mover el handle visualmente
                 joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
-                // Asignar dirección al Santa (normalizado de 0 a 1)
                 santa.dirX = deltaX / JOYSTICK_RADIUS;
                 santa.dirY = deltaY / JOYSTICK_RADIUS;
             });
@@ -262,7 +274,6 @@
                 if (keys['KeyS'] || keys['ArrowDown']) santa.dirY = 1;
             }
             
-            // Normalizar el vector de movimiento (para evitar velocidad doble en diagonal)
             const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
             if (magnitude > 0) {
                 const nx = santa.dirX / magnitude;
@@ -271,7 +282,6 @@
                 santa.x += nx * PLAYER_SPEED;
                 santa.y += ny * PLAYER_SPEED;
 
-                // Limitar al borde del canvas
                 santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
                 santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
             }
@@ -282,8 +292,6 @@
                 const currentTime = Date.now();
                 if (currentTime - santa.lastShotTime > santa.fireRate) {
                     
-                    // Cálculo de la dirección hacia el árbol (Disparo defensivo)
-                    // Para un Santa más proactivo, podrías disparar hacia el enemigo más cercano!
                     const dx = tree.x - santa.x;
                     const dy = tree.y - santa.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -309,20 +317,18 @@
                 bullet.x += bullet.dirX * BULLET_SPEED;
                 bullet.y += bullet.dirY * BULLET_SPEED;
 
-                // Chequeo de colisión con enemigos
                 let hit = false;
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
                     if (checkCollision(bullet, enemy)) {
-                        enemies.splice(j, 1); // Elimina al enemigo
-                        bullets.splice(i, 1); // Elimina la bala
+                        enemies.splice(j, 1); 
+                        bullets.splice(i, 1); 
                         score += 10;
                         hit = true;
                         break;
                     }
                 }
 
-                // Eliminar bala si sale de la pantalla
                 if (!hit && (bullet.x < 0 || bullet.x > W || bullet.y < 0 || bullet.y > H)) {
                     bullets.splice(i, 1);
                 }
@@ -332,26 +338,14 @@
         function spawnEnemies() {
             if (Math.random() < 0.02) { 
                 const size = 15;
-                const edge = Math.floor(Math.random() * 4); // 0=Top, 1=Right, 2=Bottom, 3=Left
+                const edge = Math.floor(Math.random() * 4); 
                 let x, y;
 
                 switch (edge) {
-                    case 0: // Top
-                        x = Math.random() * W;
-                        y = -size;
-                        break;
-                    case 1: // Right
-                        x = W + size;
-                        y = Math.random() * H;
-                        break;
-                    case 2: // Bottom
-                        x = Math.random() * W;
-                        y = H + size;
-                        break;
-                    case 3: // Left
-                        x = -size;
-                        y = Math.random() * H;
-                        break;
+                    case 0: x = Math.random() * W; y = -size; break;
+                    case 1: x = W + size; y = Math.random() * H; break;
+                    case 2: x = Math.random() * W; y = H + size; break;
+                    case 3: x = -size; y = Math.random() * H; break;
                 }
 
                 enemies.push({
@@ -367,7 +361,6 @@
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
 
-                // Dirigir al enemigo hacia el árbol
                 const dx = tree.x - enemy.x;
                 const dy = tree.y - enemy.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -377,12 +370,11 @@
                 enemy.x += nx * ENEMY_SPEED;
                 enemy.y += ny * ENEMY_SPEED;
 
-                // Colisión con el árbol
                 if (checkCollision(enemy, tree)) {
                     tree.health -= 1;
                     enemies.splice(i, 1);
                     if (tree.health <= 0) {
-                        alert('Game Over! El árbol ha sido talado. Puntuación: ' + score);
+                        alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
                         resetGame();
                         return;
                     }
@@ -391,18 +383,16 @@
         }
         
         function updateDialogue(deltaTime) {
-            // Decrementar duración del diálogo si está activo
+            // El deltaTime está en milisegundos, debemos ajustarlo para PHRASE_DURATION (que está en frames)
             if (dialogue.duration > 0) {
-                dialogue.duration--;
+                dialogue.duration -= (deltaTime / (1000 / 60)); // Asumiendo 60 FPS
             }
 
-            // Chequear si es hora de una nueva frase
             timeSinceLastPhrase += deltaTime;
-            if (timeSinceLastPhrase > phraseInterval && dialogue.duration <= 0) {
+            if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0) {
                 
                 let eligiblePhrases = [];
                 
-                // Encontrar el grupo de frases según la salud del árbol
                 for(const group of sarcasticPhrases) {
                     if (tree.health >= group.min) {
                         eligiblePhrases = group.phrases;
@@ -413,14 +403,13 @@
                 if (eligiblePhrases.length > 0) {
                     const newPhrase = eligiblePhrases[Math.floor(Math.random() * eligiblePhrases.length)];
                     dialogue.message = newPhrase;
-                    dialogue.duration = 180; // Mostrar por 3 segundos (asumiendo 60 FPS)
+                    dialogue.duration = PHRASE_DURATION; 
                     timeSinceLastPhrase = 0;
                 }
             }
         }
 
 
-        // Función de colisión (caja delimitadora simple)
         function checkCollision(objA, objB) {
             return objA.x < objB.x + objB.size &&
                    objA.x + objA.size > objB.x &&
@@ -434,7 +423,7 @@
             updateBullets();
             spawnEnemies();
             updateEnemies();
-            updateDialogue(deltaTime); // NUEVO: Actualizar diálogo
+            updateDialogue(deltaTime); 
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -451,6 +440,23 @@
             ctx.fill();
         }
 
+        function drawTitle() {
+            const titleText = "EL SANTA DEFENDER";
+            const fontSize = 48; // Tamaño para un buen pixel art
+            const titleColor = '#004d00'; // Verde oscuro, para contraste con #006600
+            
+            ctx.fillStyle = titleColor;
+            ctx.font = `${fontSize}px monospace`;
+            ctx.textAlign = 'center';
+            
+            // Simular un efecto de corte o bajo relieve
+            // Dibuja el texto ligeramente desplazado para el efecto "cut-out"
+            ctx.fillText(titleText, W / 2 + 2, H / 2 + fontSize * 1.5 + 2);
+            ctx.fillText(titleText, W / 2 - 2, H / 2 + fontSize * 1.5 - 2);
+
+            ctx.fillText(titleText, W / 2, H / 2 + fontSize * 1.5);
+        }
+
         function drawTree() {
             // Tronco
             drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
@@ -458,7 +464,7 @@
             // Copa del árbol (Triángulo)
             ctx.fillStyle = tree.color;
             ctx.beginPath();
-            ctx.moveTo(tree.x, tree.y - tree.size); // Punta
+            ctx.moveTo(tree.x, tree.y - tree.size); 
             ctx.lineTo(tree.x - tree.size, tree.y + tree.size / 2);
             ctx.lineTo(tree.x + tree.size, tree.y + tree.size / 2);
             ctx.closePath();
@@ -479,9 +485,9 @@
         function drawSanta() {
             // Cuerpo (Rojo)
             drawRect(santa.x, santa.y, santa.size, santa.size, santa.color);
-            // Barba (Blanco - más grande)
+            // Barba (Blanco)
             drawRect(santa.x, santa.y + 4, santa.size, santa.size / 2, 'white'); 
-            // Sombrero (Blanco/Rojo)
+            // Sombrero 
             drawRect(santa.x, santa.y - 8, santa.size / 2, santa.size / 2, 'white'); // Pompón
             drawRect(santa.x, santa.y - 10, santa.size, santa.size / 3, santa.color); // Gorro
             
@@ -505,7 +511,7 @@
             const bubbleW = textWidth + padding * 2;
             const bubbleH = textHeight + padding * 2;
             const bubbleX = x - bubbleW / 2;
-            const bubbleY = y - santa.size - bubbleH - 5; // Arriba de Santa
+            const bubbleY = y - santa.size - bubbleH - 5; 
             
             // Dibujar el fondo del globo (blanco)
             ctx.fillStyle = 'white';
@@ -516,7 +522,6 @@
             ctx.textAlign = 'center';
             ctx.fillText(message, x, bubbleY + textHeight + padding - 2);
         }
-
 
         function drawEnemies() {
             enemies.forEach(e => {
@@ -554,13 +559,16 @@
             // 1. Limpiar el Canvas
             ctx.clearRect(0, 0, W, H);
             
-            // 2. Dibujar Objetos del Juego
+            // 2. Dibujar el Título (debajo de todo)
+            drawTitle();
+
+            // 3. Dibujar Objetos del Juego
             drawTree();
             drawEnemies();
             drawBullets();
             drawSanta();
 
-            // 3. Dibujar HUD
+            // 4. Dibujar HUD
             drawHUD();
         }
 
@@ -571,7 +579,6 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            // La lógica de actualización ahora usa deltaTime para el diálogo (en milisegundos)
             updateGame(deltaTime); 
             drawGame();
 
@@ -581,12 +588,12 @@
         function resetGame() {
             santa.x = W / 2;
             santa.y = H / 2;
-            tree.health = treeHealthMax; // Usa la constante
+            tree.health = treeHealthMax; 
             score = 0;
             enemies = [];
             bullets = [];
             dialogue.message = "¡Feliz Navidad, mis pequeños capitalistas!";
-            dialogue.duration = 180;
+            dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
         }
 
