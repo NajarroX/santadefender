@@ -16,7 +16,7 @@
             align-items: center;
             height: 100vh;
             font-family: monospace;
-            position: relative; /* Necesario para centrar el canvas y que los controles absolutos funcionen bien */
+            position: relative;
         }
 
         /* Estilo del Canvas Base (relación 800x600) */
@@ -33,14 +33,32 @@
             max-height: 100vh;
         }
 
+        /* --- Control de Audio --- */
+        #audioToggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 2px solid #cc0000;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            display: none;
+            pointer-events: auto;
+        }
+
         /* --- Controles Táctiles (Joystick) --- */
         .controls {
             position: absolute;
             bottom: 20px;
             left: 20px;
             z-index: 10;
-            display: none; 
-            pointer-events: auto; /* Permite interacción */
+            display: none;
+            pointer-events: auto;
         }
 
         .joystick-container {
@@ -80,13 +98,15 @@
             user-select: none;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             pointer-events: auto;
-            display: none; /* Inicialmente oculto */
+            display: none;
         }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <button id="audioToggle">🔊</button>
 
     <div class="controls" id="mobileControls">
         <div class="joystick-container" id="joystickContainer">
@@ -99,20 +119,21 @@
         // --- 1. CONFIGURACIÓN INICIAL Y DETECCIÓN ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const BASE_W = 800; // Ancho base del juego
-        const BASE_H = 600; // Alto base del juego
+        const BASE_W = 800;
+        const BASE_H = 600;
         let W = BASE_W; 
         let H = BASE_H;
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         // Estados del Juego
-        let gameState = 'TITLE'; // 'TITLE' o 'PLAYING'
+        let gameState = 'TITLE';
 
-        // Referencias a los controles móviles
+        // Referencias a los controles y el nuevo botón de audio
         const controls = document.getElementById('mobileControls');
         const shootButton = document.getElementById('shootButton');
         const joystickContainer = document.getElementById('joystickContainer');
         const joystickHandle = document.getElementById('joystickHandle');
+        const audioToggle = document.getElementById('audioToggle');
 
         // Constantes del juego
         const PLAYER_SPEED = 4;
@@ -127,11 +148,15 @@
         
         // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
         const ENEMY_TYPES = [
-            { speed: 1.5, color: '#666666', spawnWeight: 60 }, // Lento y común (60%)
-            { speed: 2.5, color: '#990000', spawnWeight: 30 }, // Rápido (30%)
-            { speed: 1.0, color: '#000066', spawnWeight: 10 }  // Tanque (Lento, 10%)
+            { speed: 1.5, color: '#666666', spawnWeight: 60 },
+            { speed: 2.5, color: '#990000', spawnWeight: 30 },
+            { speed: 1.0, color: '#000066', spawnWeight: 10 }
         ];
-        let spawnRate = 0.02; // Probabilidad de spawn por frame
+        let spawnRate = 0.02;
+
+        // --- HITO DE PUNTUACIÓN ---
+        const HEAL_SCORE_HIT = 1000;
+        let lastHealScore = 0;
 
         // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
@@ -140,15 +165,15 @@
             size: 20, 
             color: 'red',
             health: 10,
-            maxHealth: 10, // NUEVO: Máxima salud de Santa
+            maxHealth: 10, 
             dirX: 0,
             dirY: 0,
             shooting: false,
             lastShotTime: 0,
             fireRate: 200,
             frame: 0,
-            invincible: false, // NUEVO: Estado de invencibilidad
-            invincibleTimer: 0 // NUEVO: Contador de invencibilidad
+            invincible: false, 
+            invincibleTimer: 0 
         };
 
         const tree = {
@@ -156,8 +181,10 @@
             y: BASE_H / 2,
             size: 40,
             color: '#00aa00', 
-            health: 50
+            health: 50,
+            maxHealth: 50
         };
+        const treeHealthMax = tree.maxHealth;
 
         let bullets = [];
         let enemies = [];
@@ -165,22 +192,86 @@
         let score = 0;
         let enemiesDefeatedSincePowerUp = 0; 
         let powerUpTimer = 0; 
-        const treeHealthMax = 50;
         
         let dialogue = {
             message: "¡Feliz Navidad, mis pequeños capitalistas!",
             duration: PHRASE_DURATION 
         };
 
-        const invincibilityPhrase = "¡Soy invencible, ¡Fuera de aqui capitalistas!";
+        const invincibilityPhrase = "¡Soy invencible, como el espíritu capitalista... por un momento!";
         const sarcasticPhrases = [
-            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es heredado, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!", "¡Estos muchachos son peores que el tráfico en Black Friday!", "¡La codicia no los hace inmortales, chicos!"] },
-            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!", "¡Mis elfos son fuerza de trabajo organizada!", "¡Deberían estar invirtiendo en protección, no en deforestación!"] },
+            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!", "¡Estos muchachos son peores que el tráfico en Black Friday!", "¡La codicia no los hace inmortales, chicos!"] },
+            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!", "¡Mis elfos son más eficientes que esta fuerza de trabajo!", "¡Deberían estar invirtiendo en protección, no en deforestación!"] },
             { min: 1, phrases: ["¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", "¡Mi seguro de vida cubre esto, ¿verdad?!", "¡Alguien va a pasar la Navidad en la lista negra!", "¡Si sobrevivo, subiré el precio de los juguetes en un 200%!", "¡Al menos es mejor que la reunión de la junta directiva de enero!"] }
         ];
 
         let timeSinceLastPhrase = 0;
 
+        // --- WEB AUDIO API (Control y Generación de Sonido) ---
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const masterGain = audioContext.createGain();
+        masterGain.connect(audioContext.destination);
+        let isMuted = false;
+
+        /**
+         * Genera un efecto de sonido simple de 8 bits.
+         */
+        function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) {
+            if (isMuted) return;
+
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+            if (endFrequency !== frequency) {
+                oscillator.frequency.linearRampToValueAtTime(endFrequency, audioContext.currentTime + duration);
+            }
+
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(masterGain);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playExplosion(pitch) {
+            playSound(pitch, 0.1, 'triangle', pitch * 0.5, 0.6);
+        }
+
+        function playHealSound() {
+            playSound(400, 0.15, 'sine', 800, 0.8); 
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                masterGain.gain.setValueAtTime(0, audioContext.currentTime);
+                audioToggle.textContent = '🔇';
+            } else {
+                masterGain.gain.setValueAtTime(1, audioContext.currentTime);
+                audioToggle.textContent = '🔊';
+            }
+        }
+        
+        audioToggle.addEventListener('click', toggleAudio);
+        
+        // --- Listener para el atajo de teclado TAB (NUEVO) ---
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Tab' && gameState === 'PLAYING') {
+                e.preventDefault(); // Evita que el foco salte
+                toggleAudio();
+            }
+        });
+        
         // --- CLASE EXPLOSIÓN (Sin cambios) ---
         class Explosion {
             constructor(x, y, color) {
@@ -248,12 +339,15 @@
         
         function handleStartGame() {
             if (gameState === 'TITLE') {
+                playSound(440, 0.01, 'sine', 440, 0); 
+
                 gameState = 'PLAYING';
                 resetGame();
                 if (isMobile) {
                     controls.style.display = 'block';
                     shootButton.style.display = 'flex';
                 }
+                audioToggle.style.display = 'block';
             }
         }
 
@@ -269,11 +363,17 @@
         let keys = {};
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
-                if (gameState === 'PLAYING') keys[e.code] = true;
+                // Control de movimiento
+                if (gameState === 'PLAYING') {
+                    keys[e.code] = true;
+                }
             });
             window.addEventListener('keyup', (e) => {
-                if (gameState === 'PLAYING') keys[e.code] = false;
-                if (e.code === 'Space' && gameState === 'PLAYING') santa.shooting = false;
+                if (gameState === 'PLAYING') {
+                    keys[e.code] = false;
+                    // Asegurar que el disparo se detenga si se suelta espacio
+                    if (e.code === 'Space') santa.shooting = false; 
+                }
             });
             window.addEventListener('mousedown', (e) => {
                 if (e.button === 0 && gameState === 'PLAYING') santa.shooting = true;
@@ -354,6 +454,7 @@
                         dirY: ny
                     });
                     santa.lastShotTime = currentTime;
+                    playSound(700, 0.05, 'square');
                 }
             }
         }
@@ -374,6 +475,7 @@
                         bullets.splice(i, 1); 
                         score += 10;
                         enemiesDefeatedSincePowerUp++;
+                        playExplosion(300);
                         
                         hit = true;
                         break;
@@ -399,7 +501,7 @@
             }
             
             if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
-                // El power-up ahora RELLENA LA SALUD de Santa
+                // El power-up rellena la salud de Santa
                 santa.health = santa.maxHealth; 
                 
                 // Activa la invencibilidad
@@ -409,6 +511,24 @@
                 enemiesDefeatedSincePowerUp = 0; 
                 dialogue.message = invincibilityPhrase;
                 dialogue.duration = PHRASE_DURATION;
+                playSound(300, 0.2, 'sawtooth', 700);
+            }
+        }
+
+        function checkHealHit() {
+            if (score >= lastHealScore + HEAL_SCORE_HIT) {
+                lastHealScore += HEAL_SCORE_HIT;
+
+                const healAmount = tree.maxHealth * 0.5;
+                const newHealth = Math.min(tree.maxHealth, tree.health + healAmount);
+                
+                if (newHealth > tree.health) {
+                    tree.health = newHealth;
+                    dialogue.message = `¡HITO! El árbol se ha regenerado un 50%. HP: ${tree.health}`;
+                    dialogue.duration = PHRASE_DURATION;
+                    
+                    playHealSound();
+                }
             }
         }
 
@@ -445,7 +565,6 @@
         function spawnEnemies() {
             if (Math.random() < spawnRate) { 
                 
-                // Lógica de selección de enemigo por peso
                 let totalWeight = ENEMY_TYPES.reduce((sum, type) => sum + type.spawnWeight, 0);
                 let randomValue = Math.random() * totalWeight;
                 let selectedType = ENEMY_TYPES[0];
@@ -473,7 +592,7 @@
                     y: y, 
                     size: size, 
                     color: selectedType.color,
-                    speed: selectedType.speed // Velocidad individual
+                    speed: selectedType.speed
                 });
             }
         }
@@ -487,7 +606,6 @@
                 const nx = dx / dist;
                 const ny = dy / dist;
                 
-                // Mover enemigo con su velocidad individual
                 enemy.x += nx * enemy.speed; 
                 enemy.y += ny * enemy.speed;
                 
@@ -495,26 +613,27 @@
 
                 // LÓGICA DE DAÑO A SANTA CON INVENCIBILIDAD
                 if (checkCollision(enemy, santa)) {
-                    if (!santa.invincible) { // Solo recibe daño si NO es invencible
+                    if (!santa.invincible) {
                         santa.health -= 1;
                         explosions.push(new Explosion(enemy.x, enemy.y, 'white'));
+                        playSound(150, 0.1, 'square', 100);
                         
                         if (santa.health <= 0) {
                             alert('GAME OVER! Santa ha sido sobrepasado. Puntuación: ' + score);
+                            playSound(200, 1.0, 'sine', 50);
                             gameState = 'TITLE';
                             resetGame();
                             if (isMobile) {
                                 controls.style.display = 'none';
                                 shootButton.style.display = 'none';
                             }
+                            audioToggle.style.display = 'none';
                             return; 
                         }
                     } else {
-                        // Si es invencible, solo hay una explosión visual al contacto
                         explosions.push(new Explosion(enemy.x, enemy.y, '#FF00FF'));
                     }
 
-                    // El enemigo siempre se destruye al colisionar con Santa
                     enemies.splice(i, 1);
                     destroyed = true;
                 }
@@ -526,12 +645,14 @@
                     
                     if (tree.health <= 0) {
                         alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
+                        playSound(200, 1.0, 'sine', 50);
                         gameState = 'TITLE'; 
                         resetGame(); 
                         if (isMobile) {
                             controls.style.display = 'none';
                             shootButton.style.display = 'none';
                         }
+                        audioToggle.style.display = 'none';
                         return;
                     }
                 }
@@ -560,8 +681,6 @@
             }
         }
         function checkCollision(objA, objB) {
-            // Esta función maneja la colisión entre Santa/Enemigo/Árbol. 
-            // Para Santa y Enemigos, usan 'size'. Para Árbol, usa 'size' también.
             return objA.x < objB.x + objB.size && objA.x + objA.size > objB.x &&
                    objA.y < objB.y + objB.size && objA.y + objB.size > objB.y;
         }
@@ -576,6 +695,7 @@
             spawnEnemies();
             updateEnemies();
             updateDialogue(deltaTime); 
+            checkHealHit();
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -592,9 +712,8 @@
         }
 
         function drawSanta(x, y, size, frame) {
-            // NUEVO: Efecto de parpadeo si es invencible
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
-                return; // Ocultar el sprite para un efecto de parpadeo
+                return;
             }
 
             const legOffset = (Math.floor(frame) === 0) ? 3 : -3;
@@ -626,7 +745,7 @@
             
             const instructions = isMobile ? 
                 ["**MOVIL**:", "Joystick Izq: Mover", "Botón FUEGO: Disparar", "Toca la pantalla para JUGAR"] :
-                ["**PC**:", "WASD / Flechas: Mover", "Espacio / Click: Disparar", "Click en la pantalla para JUGAR"];
+                ["**PC**:", "WASD / Flechas: Mover", "Espacio / Click: Disparar", "TAB: Silenciar Audio", "Click en la pantalla para JUGAR"];
             
             let lineY = H / 2 - 50;
             const lineX = W * 0.6;
@@ -710,7 +829,7 @@
             ctx.fillStyle = 'white';
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText(`HP: ${tree.health}`, tree.x, tree.y + tree.size + 10);
+            ctx.fillText(`HP: ${tree.health}/${tree.maxHealth}`, tree.x, tree.y + tree.size + 10);
         }
 
         function drawEnemies() {
@@ -797,11 +916,12 @@
             santa.x = BASE_W / 2;
             santa.y = BASE_H / 2;
             santa.frame = 0;
-            santa.health = santa.maxHealth; // REINICIAR SALUD DE SANTA
-            santa.invincible = false; // RESET INVENCIBILIDAD
-            santa.invincibleTimer = 0; // RESET TIMER
-            tree.health = treeHealthMax; 
+            santa.health = santa.maxHealth;
+            santa.invincible = false;
+            santa.invincibleTimer = 0;
+            tree.health = tree.maxHealth;
             score = 0;
+            lastHealScore = 0;
             enemies = [];
             bullets = [];
             explosions = []; 
@@ -811,6 +931,8 @@
             dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
         }
+
+        audioToggle.style.display = 'none';
 
         // Iniciar el bucle de juego
         requestAnimationFrame(gameLoop);
