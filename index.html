@@ -21,8 +21,9 @@
         /* Estilo del Canvas */
         #gameCanvas {
             border: 4px solid #cc0000;
-            background-color: #006600; /* Terreno de nieve/bosque (Verde Base) */
-            touch-action: none; /* Previene el comportamiento por defecto del touch */
+            background-color: #006600; 
+            touch-action: none; 
+            cursor: pointer; 
         }
 
         /* --- Controles Táctiles (Joystick) --- */
@@ -31,7 +32,7 @@
             bottom: 20px;
             left: 20px;
             z-index: 10;
-            display: none; /* Inicialmente oculto, se muestra si es móvil */
+            display: none; 
         }
 
         .joystick-container {
@@ -92,6 +93,9 @@
         const H = canvas.height;
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
+        // Estados del Juego
+        let gameState = 'TITLE'; // 'TITLE' o 'PLAYING'
+
         // Referencias a los controles móviles
         const controls = document.getElementById('mobileControls');
         const shootButton = document.getElementById('shootButton');
@@ -103,18 +107,14 @@
         const BULLET_SPEED = 8;
         const ENEMY_SPEED = 2;
         const JOYSTICK_RADIUS = 75; 
-
-        // Mostrar/Ocultar controles según el dispositivo
-        if (isMobile) {
-            controls.style.display = 'block';
-            shootButton.style.display = 'flex';
-        } else {
-            controls.style.display = 'none';
-            shootButton.style.display = 'none';
-        }
-
-        // --- 2. OBJETOS DEL JUEGO ---
-
+        const PHRASE_DURATION = 300; // 5 segundos a 60 FPS
+        const PHRASE_INTERVAL = 8000; // 8 segundos
+        
+        // --- POWER-UP CONSTANTES ---
+        const ENEMIES_FOR_POWERUP = 10;
+        const POWERUP_DURATION = 300; // 5 segundos
+        
+        // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
             x: W / 2,
             y: H / 2,
@@ -125,7 +125,8 @@
             dirY: 0,
             shooting: false,
             lastShotTime: 0,
-            fireRate: 200 
+            fireRate: 200,
+            frame: 0 // Para animación de movimiento
         };
 
         const tree = {
@@ -138,12 +139,11 @@
 
         let bullets = [];
         let enemies = [];
+        let explosions = []; 
         let score = 0;
-        
-        // --- GLOBOS DE DIÁLOGO MEJORADOS ---
+        let enemiesDefeatedSincePowerUp = 0; // NUEVO: Contador de racha
+        let powerUpTimer = 0; // NUEVO: Temporizador del Power-Up
         const treeHealthMax = 50;
-        const PHRASE_DURATION = 300; // 5 segundos a 60 FPS
-        const PHRASE_INTERVAL = 8000; // 8 segundos
         
         let dialogue = {
             message: "¡Feliz Navidad, mis pequeños capitalistas!",
@@ -151,147 +151,143 @@
         };
 
         const sarcasticPhrases = [
-            // >= 80% HP (40-50 HP)
-            { min: 40, phrases: [
-                "¡No me cansaré hasta que mis nietos hereden el negocio!", 
-                "¡Este traje es de marca, no lo ensucies!", 
-                "¡El valor de mercado de este pino es astronómico!",
-                "¡Estos muchachos son peores que el tráfico en Black Friday!",
-                "¡La codicia no los hace inmortales, chicos!"
-            ] },
-            // 50% - 80% HP (25-39 HP)
-            { min: 25, phrases: [
-                "¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", 
-                "¡Un poco de dolor hará que aprecien más la Navidad.", 
-                "¡Pagaría por un café con estos niveles de adrenalina!",
-                "¡Mis elfos son más eficientes que esta fuerza de trabajo!",
-                "¡Deberían estar invirtiendo en protección, no en deforestación!"
-            ] },
-            // < 50% HP (1-24 HP)
-            { min: 1, phrases: [
-                "¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", 
-                "¡Mi seguro de vida cubre esto, ¿verdad?!", 
-                "¡Alguien va a pasar la Navidad en la lista negra!",
-                "¡Si sobrevivo, subiré el precio de los juguetes en un 200%!",
-                "¡Al menos es mejor que la reunión de la junta directiva de enero!"
-            ] }
+            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!", "¡Estos muchachos son peores que el tráfico en Black Friday!", "¡La codicia no los hace inmortales, chicos!"] },
+            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!", "¡Mis elfos son más eficientes que esta fuerza de trabajo!", "¡Deberían estar invirtiendo en protección, no en deforestación!"] },
+            { min: 1, phrases: ["¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", "¡Mi seguro de vida cubre esto, ¿verdad?!", "¡Alguien va a pasar la Navidad en la lista negra!", "¡Si sobrevivo, subiré el precio de los juguetes en un 200%!", "¡Al menos es mejor que la reunión de la junta directiva de enero!"] }
         ];
 
         let timeSinceLastPhrase = 0;
 
+        // --- CLASE EXPLOSIÓN (Sin cambios) ---
+        class Explosion {
+            constructor(x, y, color) {
+                this.particles = [];
+                for (let i = 0; i < 10; i++) {
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        size: Math.random() * 4 + 2, 
+                        color: color,
+                        vx: Math.random() * 6 - 3, 
+                        vy: Math.random() * 6 - 3, 
+                        life: 30 
+                    });
+                }
+            }
 
-        // --- 3. MANEJO DE CONTROLES (PC: Teclado y Mouse) ---
+            update() {
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                });
+                this.particles = this.particles.filter(p => p.life > 0);
+                return this.particles.length > 0;
+            }
+
+            draw() {
+                this.particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+                });
+            }
+        }
+
+        // --- 3. MANEJO DE EVENTOS (Título y Controles) ---
+        function handleStartGame() {
+            if (gameState === 'TITLE') {
+                gameState = 'PLAYING';
+                resetGame();
+                if (isMobile) {
+                    controls.style.display = 'block';
+                    shootButton.style.display = 'flex';
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleStartGame);
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState === 'TITLE') {
+                e.preventDefault();
+                handleStartGame();
+            }
+        });
+        
+        // --- Controles de juego (Se mantienen) ---
         let keys = {};
-
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
-                keys[e.code] = true;
+                if (gameState === 'PLAYING') keys[e.code] = true;
             });
-
             window.addEventListener('keyup', (e) => {
-                keys[e.code] = false;
-                if (e.code === 'Space') {
-                    santa.shooting = false;
-                }
+                if (gameState === 'PLAYING') keys[e.code] = false;
+                if (e.code === 'Space' && gameState === 'PLAYING') santa.shooting = false;
             });
-
             window.addEventListener('mousedown', (e) => {
-                if (e.button === 0) santa.shooting = true; 
+                if (e.button === 0 && gameState === 'PLAYING') santa.shooting = true;
             });
-
             window.addEventListener('mouseup', (e) => {
-                if (e.button === 0) santa.shooting = false;
+                if (e.button === 0 && gameState === 'PLAYING') santa.shooting = false;
             });
         }
 
-        // --- 4. MANEJO DE CONTROLES (MÓVIL: Joystick Táctil) ---
-
-        let joystickActive = false;
-        let startX, startY;
-
+        // Lógica Touch para Joystick y Botón de Fuego (Se mantiene)
         if (isMobile) {
-            // Joystick Movement
             joystickContainer.addEventListener('touchstart', (e) => {
+                if (gameState !== 'PLAYING') return;
                 e.preventDefault();
                 joystickActive = true;
                 const touch = e.touches[0];
                 startX = touch.clientX;
                 startY = touch.clientY;
             });
-
             joystickContainer.addEventListener('touchmove', (e) => {
-                if (!joystickActive) return;
+                if (!joystickActive || gameState !== 'PLAYING') return;
                 const touch = e.touches[0];
-                
                 let deltaX = touch.clientX - startX;
                 let deltaY = touch.clientY - startY;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                
                 if (distance > JOYSTICK_RADIUS) {
                     deltaX = (deltaX / distance) * JOYSTICK_RADIUS;
                     deltaY = (deltaY / distance) * JOYSTICK_RADIUS;
                 }
-
                 joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
                 santa.dirX = deltaX / JOYSTICK_RADIUS;
                 santa.dirY = deltaY / JOYSTICK_RADIUS;
             });
-
             const resetJoystick = () => {
                 joystickActive = false;
                 santa.dirX = 0;
                 santa.dirY = 0;
                 joystickHandle.style.transform = `translate(0px, 0px)`;
             };
-
             joystickContainer.addEventListener('touchend', resetJoystick);
             joystickContainer.addEventListener('touchcancel', resetJoystick);
 
-            // Shoot Button
             shootButton.addEventListener('touchstart', (e) => {
+                if (gameState !== 'PLAYING') return;
                 e.preventDefault();
                 santa.shooting = true;
             });
             shootButton.addEventListener('touchend', (e) => {
+                if (gameState !== 'PLAYING') return;
                 e.preventDefault();
                 santa.shooting = false;
             });
         }
 
 
-        // --- 5. LÓGICA DEL JUEGO (UPDATE) ---
-
-        function updatePlayerMovement() {
-            if (!isMobile) {
-                // Lógica de PC (Teclado)
-                santa.dirX = 0;
-                santa.dirY = 0;
-
-                if (keys['KeyA'] || keys['ArrowLeft']) santa.dirX = -1;
-                if (keys['KeyD'] || keys['ArrowRight']) santa.dirX = 1;
-                if (keys['KeyW'] || keys['ArrowUp']) santa.dirY = -1;
-                if (keys['KeyS'] || keys['ArrowDown']) santa.dirY = 1;
-            }
-            
-            const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
-            if (magnitude > 0) {
-                const nx = santa.dirX / magnitude;
-                const ny = santa.dirY / magnitude;
-                
-                santa.x += nx * PLAYER_SPEED;
-                santa.y += ny * PLAYER_SPEED;
-
-                santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
-                santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
-            }
-        }
+        // --- 4. LÓGICA DEL JUEGO (UPDATE) ---
 
         function handleShooting(deltaTime) {
-            if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting)) {
+            const currentFireRate = (powerUpTimer > 0) ? 50 : santa.fireRate; // ¡Fuego rápido!
+            
+            // Disparar solo si el jugador presiona o si el power-up está activo
+            if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (powerUpTimer > 0)) {
                 const currentTime = Date.now();
-                if (currentTime - santa.lastShotTime > santa.fireRate) {
+                if (currentTime - santa.lastShotTime > currentFireRate) {
                     
+                    // Disparar hacia el centro del árbol
                     const dx = tree.x - santa.x;
                     const dy = tree.y - santa.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -301,8 +297,8 @@
                     bullets.push({
                         x: santa.x,
                         y: santa.y,
-                        size: 8,
-                        color: 'yellow',
+                        size: (powerUpTimer > 0) ? 12 : 8, // Balas más grandes durante el power-up
+                        color: (powerUpTimer > 0) ? '#00FFFF' : 'yellow', // Balas cian
                         dirX: nx,
                         dirY: ny
                     });
@@ -310,7 +306,7 @@
                 }
             }
         }
-
+        
         function updateBullets() {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
@@ -321,9 +317,15 @@
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
                     if (checkCollision(bullet, enemy)) {
+                        explosions.push(new Explosion(enemy.x, enemy.y, enemy.color)); 
+                        
                         enemies.splice(j, 1); 
                         bullets.splice(i, 1); 
                         score += 10;
+                        
+                        // NUEVO: Aumentar el contador de racha
+                        enemiesDefeatedSincePowerUp++;
+                        
                         hit = true;
                         break;
                     }
@@ -334,42 +336,62 @@
                 }
             }
         }
-
-        function spawnEnemies() {
-            if (Math.random() < 0.02) { 
-                const size = 15;
-                const edge = Math.floor(Math.random() * 4); 
-                let x, y;
-
-                switch (edge) {
-                    case 0: x = Math.random() * W; y = -size; break;
-                    case 1: x = W + size; y = Math.random() * H; break;
-                    case 2: x = Math.random() * W; y = H + size; break;
-                    case 3: x = -size; y = Math.random() * H; break;
-                }
-
-                enemies.push({
-                    x: x,
-                    y: y,
-                    size: size,
-                    color: '#666666' 
-                });
+        
+        function updatePowerUp(deltaTime) {
+            if (powerUpTimer > 0) {
+                // Decrementar el temporizador del Power-Up (ajustado por delta time)
+                powerUpTimer -= deltaTime; 
+            }
+            
+            // Chequear si se activa el Power-Up
+            if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
+                powerUpTimer = POWERUP_DURATION * (1000 / 60); // Convertir frames a ms
+                enemiesDefeatedSincePowerUp = 0; // Reiniciar contador
+                dialogue.message = "¡FRENESÍ NAVIDEÑO ACTIVADO! ¡FUERA CAPITALISTAS!";
+                dialogue.duration = PHRASE_DURATION;
             }
         }
 
+        // --- Funciones de juego (sin cambios mayores) ---
+        function updatePlayerMovement() {
+            if (!isMobile) {
+                santa.dirX = 0;
+                santa.dirY = 0;
+                if (keys['KeyA'] || keys['ArrowLeft']) santa.dirX = -1;
+                if (keys['KeyD'] || keys['ArrowRight']) santa.dirX = 1;
+                if (keys['KeyW'] || keys['ArrowUp']) santa.dirY = -1;
+                if (keys['KeyS'] || keys['ArrowDown']) santa.dirY = 1;
+            }
+            const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
+            if (magnitude > 0) {
+                const nx = santa.dirX / magnitude;
+                const ny = santa.dirY / magnitude;
+                santa.x += nx * PLAYER_SPEED;
+                santa.y += ny * PLAYER_SPEED;
+                santa.frame = (santa.frame + 0.1) % 2; 
+                santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
+                santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
+            } else {
+                 santa.frame = 0; 
+            }
+        }
+        function updateExplosions() {
+             for (let i = explosions.length - 1; i >= 0; i--) {
+                if (!explosions[i].update()) {
+                    explosions.splice(i, 1);
+                }
+            }
+        }
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-
                 const dx = tree.x - enemy.x;
                 const dy = tree.y - enemy.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 const nx = dx / dist;
                 const ny = dy / dist;
-
                 enemy.x += nx * ENEMY_SPEED;
                 enemy.y += ny * ENEMY_SPEED;
-
                 if (checkCollision(enemy, tree)) {
                     tree.health -= 1;
                     enemies.splice(i, 1);
@@ -381,25 +403,33 @@
                 }
             }
         }
-        
-        function updateDialogue(deltaTime) {
-            // El deltaTime está en milisegundos, debemos ajustarlo para PHRASE_DURATION (que está en frames)
-            if (dialogue.duration > 0) {
-                dialogue.duration -= (deltaTime / (1000 / 60)); // Asumiendo 60 FPS
+        function spawnEnemies() {
+            if (Math.random() < 0.02) { 
+                const size = 15;
+                const edge = Math.floor(Math.random() * 4); 
+                let x, y;
+                switch (edge) {
+                    case 0: x = Math.random() * W; y = -size; break;
+                    case 1: x = W + size; y = Math.random() * H; break;
+                    case 2: x = Math.random() * W; y = H + size; break;
+                    case 3: x = -size; y = Math.random() * H; break;
+                }
+                enemies.push({ x: x, y: y, size: size, color: '#666666' });
             }
-
+        }
+        function updateDialogue(deltaTime) {
+            if (dialogue.duration > 0) {
+                dialogue.duration -= (deltaTime / (1000 / 60)); 
+            }
             timeSinceLastPhrase += deltaTime;
             if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0) {
-                
                 let eligiblePhrases = [];
-                
                 for(const group of sarcasticPhrases) {
                     if (tree.health >= group.min) {
                         eligiblePhrases = group.phrases;
                         break;
                     }
                 }
-                
                 if (eligiblePhrases.length > 0) {
                     const newPhrase = eligiblePhrases[Math.floor(Math.random() * eligiblePhrases.length)];
                     dialogue.message = newPhrase;
@@ -408,31 +438,29 @@
                 }
             }
         }
-
-
         function checkCollision(objA, objB) {
-            return objA.x < objB.x + objB.size &&
-                   objA.x + objA.size > objB.x &&
-                   objA.y < objB.y + objB.size &&
-                   objA.y + objA.size > objB.y;
+            return objA.x < objB.x + objB.size && objA.x + objA.size > objB.x &&
+                   objA.y < objB.y + objB.size && objA.y + objA.size > objB.y;
         }
 
         function updateGame(deltaTime) {
             updatePlayerMovement();
+            updatePowerUp(deltaTime); // NUEVO: Actualizar Power-Up
             handleShooting(deltaTime);
             updateBullets();
+            updateExplosions(); 
             spawnEnemies();
             updateEnemies();
             updateDialogue(deltaTime); 
         }
 
-        // --- 6. RENDERIZADO (DRAW) ---
+        // --- 5. RENDERIZADO (DRAW) ---
 
+        // Helpers de Dibujo (simplificados)
         function drawRect(x, y, w, h, color) {
             ctx.fillStyle = color;
             ctx.fillRect(x - w / 2, y - h / 2, w, h);
         }
-        
         function drawCircle(x, y, r, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -440,28 +468,111 @@
             ctx.fill();
         }
 
-        function drawTitle() {
-            const titleText = "EL SANTA DEFENDER";
-            const fontSize = 48; // Tamaño para un buen pixel art
-            const titleColor = '#004d00'; // Verde oscuro, para contraste con #006600
+        function drawSanta(x, y, size, frame) {
+             const legOffset = (Math.floor(frame) === 0) ? 3 : -3;
+            drawRect(x, y, size, size, 'red');
+            drawRect(x, y + 4, size, size / 2, 'white'); 
+            drawRect(x, y - 8, size / 2, size / 2, 'white'); 
+            drawRect(x, y - 10, size, size / 3, 'red'); 
+            drawRect(x - 5, y - 2, 3, 3, 'black');
+            drawRect(x + 5, y - 2, 3, 3, 'black');
+            // Piernas (Animación)
+            drawRect(x - 5 + legOffset, y + 8, 4, 4, 'black');
+            drawRect(x + 5 - legOffset, y + 8, 4, 4, 'black');
+        }
+
+        function drawTitleText(x, y, message, fontSize, color) {
+            ctx.fillStyle = color;
+            ctx.font = `${fontSize}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText(message, x, y);
+        }
+
+        function drawTitleScreen() {
+            ctx.fillStyle = '#003300';
+            ctx.fillRect(0, 0, W, H);
+            drawTitleText(W / 2, H / 2 - 150, "EL SANTA DEFENDER", 60, '#cc0000');
+            drawTitleText(W / 2, H / 2 - 80, "La Lucha Contra la Codicia", 24, 'white');
+            drawSanta(W / 4, H / 2 + 50, 40, 0); 
+            drawTitleText(W / 4, H / 2 + 100, "Santa", 20, 'white');
+            const instructions = isMobile ? 
+                ["**MOVIL**:", "Joystick Izq: Mover", "Botón FUEGO: Disparar", "Toca la pantalla para JUGAR"] :
+                ["**PC**:", "WASD / Flechas: Mover", "Espacio / Click: Disparar", "Click en la pantalla para JUGAR"];
+            ctx.textAlign = 'left';
+            let lineY = H / 2 - 50;
+            const lineX = W / 2 + 50;
+            instructions.forEach(line => {
+                const color = line.startsWith('**') ? '#ffcc00' : 'white';
+                const text = line.replace(/\*\*/g, '');
+                drawTitleText(lineX + 100, lineY, text, 20, color);
+                lineY += 30;
+            });
+            drawTitleText(W / 2, H - 50, "¡La Navidad depende de ti!", 24, '#00aa00');
+        }
+
+        // NUEVO: Efecto Glitch Psicodélico
+        function applyPsychedelicGlitch() {
+            // Aplicar un desplazamiento (glitch de posición)
+            ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2); 
             
+            // Aplicar un filtro (glitch de color/saturación)
+            if (Math.random() < 0.5) {
+                ctx.globalAlpha = 0.8;
+                ctx.filter = `hue-rotate(${Math.random() * 360}deg) saturate(200%)`;
+            } else {
+                 ctx.filter = 'none';
+                 ctx.globalAlpha = 1;
+            }
+        }
+        
+        function drawGameObjects() {
+            // 1. **Aplicar Glitch si Power-Up está activo**
+            if (powerUpTimer > 0) {
+                applyPsychedelicGlitch();
+            } else {
+                ctx.filter = 'none';
+                ctx.globalAlpha = 1;
+            }
+            
+            // 2. Dibujar Título del Nivel
+            const titleText = "EL SANTA DEFENDER";
+            const fontSize = 48; 
+            const titleColor = '#004d00'; 
             ctx.fillStyle = titleColor;
             ctx.font = `${fontSize}px monospace`;
             ctx.textAlign = 'center';
-            
-            // Simular un efecto de corte o bajo relieve
-            // Dibuja el texto ligeramente desplazado para el efecto "cut-out"
             ctx.fillText(titleText, W / 2 + 2, H / 2 + fontSize * 1.5 + 2);
             ctx.fillText(titleText, W / 2 - 2, H / 2 + fontSize * 1.5 - 2);
-
             ctx.fillText(titleText, W / 2, H / 2 + fontSize * 1.5);
-        }
 
-        function drawTree() {
-            // Tronco
-            drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
+            // 3. Dibujar Objetos del Juego
+            drawTree();
+            drawEnemies();
+            drawBullets();
+            drawSanta(santa.x, santa.y, santa.size, santa.frame); 
+            explosions.forEach(exp => exp.draw());
+            drawHUD();
             
-            // Copa del árbol (Triángulo)
+            // 4. **Restablecer la transformación y el filtro después de dibujar**
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.filter = 'none';
+            ctx.globalAlpha = 1;
+
+            // 5. Dibujar indicador de Power-Up
+            if (powerUpTimer > 0) {
+                ctx.fillStyle = '#FF00FF';
+                ctx.fillRect(W / 2 - 150, H - 25, 300 * (powerUpTimer / (POWERUP_DURATION * (1000 / 60))), 15);
+                drawTitleText(W/2, H-10, "FRENESÍ ACTIVO", 16, '#FF00FF');
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(W / 2 - 150, H - 25, 300 * (enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP), 15);
+                drawTitleText(W/2, H-10, `Racha: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP}`, 16, 'white');
+            }
+        }
+        
+        function drawTree() {
+            // ... (código sin cambios)
+            drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
             ctx.fillStyle = tree.color;
             ctx.beginPath();
             ctx.moveTo(tree.x, tree.y - tree.size); 
@@ -469,75 +580,41 @@
             ctx.lineTo(tree.x + tree.size, tree.y + tree.size / 2);
             ctx.closePath();
             ctx.fill();
-
-            // Bolitas Navideñas (Detalle)
             drawCircle(tree.x - 10, tree.y - 15, 3, 'yellow');
             drawCircle(tree.x + 15, tree.y, 3, 'red');
             drawCircle(tree.x - 5, tree.y + 10, 3, 'blue');
-
-            // Dibujar salud del árbol
             ctx.fillStyle = 'white';
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
             ctx.fillText(`HP: ${tree.health}`, tree.x, tree.y + tree.size + 10);
         }
-
-        function drawSanta() {
-            // Cuerpo (Rojo)
-            drawRect(santa.x, santa.y, santa.size, santa.size, santa.color);
-            // Barba (Blanco)
-            drawRect(santa.x, santa.y + 4, santa.size, santa.size / 2, 'white'); 
-            // Sombrero 
-            drawRect(santa.x, santa.y - 8, santa.size / 2, santa.size / 2, 'white'); // Pompón
-            drawRect(santa.x, santa.y - 10, santa.size, santa.size / 3, santa.color); // Gorro
-            
-            // Ojos (Negro)
-            drawRect(santa.x - 5, santa.y - 2, 3, 3, 'black');
-            drawRect(santa.x + 5, santa.y - 2, 3, 3, 'black');
-            
-            // Dibujar Globo de Diálogo (si está activo)
-            if (dialogue.duration > 0) {
-                drawDialogueBubble(santa.x, santa.y, dialogue.message);
-            }
+        function drawEnemies() {
+            enemies.forEach(e => {
+                drawRect(e.x, e.y, e.size, e.size, e.color);
+                drawRect(e.x + e.size / 4, e.y + e.size / 4, e.size / 3, e.size / 3, 'black'); 
+            });
         }
-        
+        function drawBullets() {
+            bullets.forEach(b => {
+                drawRect(b.x, b.y, b.size, b.size, b.color);
+            });
+        }
         function drawDialogueBubble(x, y, message) {
             const padding = 10;
             ctx.font = '16px monospace';
             const textMetrics = ctx.measureText(message);
             const textWidth = textMetrics.width;
             const textHeight = 16;
-            
             const bubbleW = textWidth + padding * 2;
             const bubbleH = textHeight + padding * 2;
             const bubbleX = x - bubbleW / 2;
             const bubbleY = y - santa.size - bubbleH - 5; 
-            
-            // Dibujar el fondo del globo (blanco)
             ctx.fillStyle = 'white';
             ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
-            
-            // Dibujar el texto (negro)
             ctx.fillStyle = 'black';
             ctx.textAlign = 'center';
             ctx.fillText(message, x, bubbleY + textHeight + padding - 2);
         }
-
-        function drawEnemies() {
-            enemies.forEach(e => {
-                // Empresario (Gris con Maletín)
-                drawRect(e.x, e.y, e.size, e.size, e.color);
-                drawRect(e.x + e.size / 4, e.y + e.size / 4, e.size / 3, e.size / 3, 'black'); // Maletín
-            });
-        }
-
-        function drawBullets() {
-            bullets.forEach(b => {
-                // Regalo (Amarillo/Dorado)
-                drawRect(b.x, b.y, b.size, b.size, b.color);
-            });
-        }
-
         function drawHUD() {
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
@@ -546,41 +623,27 @@
             ctx.textAlign = 'right';
             ctx.fillText(`Salud Santa: ${santa.health}`, W - 10, 30);
             
-            if (isMobile) {
-                 ctx.textAlign = 'center';
-                 ctx.fillText(`Modo Móvil`, W / 2, 30);
-            } else {
-                 ctx.textAlign = 'center';
-                 ctx.fillText(`Modo PC (WASD/Click)`, W / 2, 30);
+            if (dialogue.duration > 0) {
+                drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
         }
 
-        function drawGame() {
-            // 1. Limpiar el Canvas
-            ctx.clearRect(0, 0, W, H);
-            
-            // 2. Dibujar el Título (debajo de todo)
-            drawTitle();
 
-            // 3. Dibujar Objetos del Juego
-            drawTree();
-            drawEnemies();
-            drawBullets();
-            drawSanta();
-
-            // 4. Dibujar HUD
-            drawHUD();
-        }
-
-        // --- 7. BUCLE PRINCIPAL Y RESET ---
+        // --- 6. BUCLE PRINCIPAL Y RESET ---
 
         let lastTime = 0;
         function gameLoop(timestamp) {
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            updateGame(deltaTime); 
-            drawGame();
+            ctx.clearRect(0, 0, W, H);
+            
+            if (gameState === 'TITLE') {
+                drawTitleScreen();
+            } else if (gameState === 'PLAYING') {
+                updateGame(deltaTime); 
+                drawGameObjects();
+            }
 
             requestAnimationFrame(gameLoop);
         }
@@ -588,17 +651,26 @@
         function resetGame() {
             santa.x = W / 2;
             santa.y = H / 2;
+            santa.frame = 0;
             tree.health = treeHealthMax; 
             score = 0;
             enemies = [];
             bullets = [];
+            explosions = []; 
+            enemiesDefeatedSincePowerUp = 0; // NUEVO: Resetear contador
+            powerUpTimer = 0; // NUEVO: Resetear timer
             dialogue.message = "¡Feliz Navidad, mis pequeños capitalistas!";
             dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
+            
+            // Asegurar que los controles táctiles estén ocultos si el juego no está activo
+             if (isMobile) {
+                controls.style.display = 'none';
+                shootButton.style.display = 'none';
+            }
         }
 
-        // Iniciar el juego
-        resetGame();
+        // Iniciar el bucle de juego
         requestAnimationFrame(gameLoop);
 
     </script>
