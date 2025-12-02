@@ -1915,17 +1915,17 @@
             ctx.textAlign = 'left';
             ctx.fillText(`PUNTOS: ${score}`, 10, 30);
             
-            // ------------------- Indicador de BOMBA -------------------
+            // ------------------- Indicador de BOMBA (abajo del contador de puntos) -------------------
             const nextBomba = BOMBA_SCORE_HIT - (score - lastBombaScore);
             if (nextBomba > 0) {
                 ctx.fillStyle = '#FF9900';
-                ctx.textAlign = 'right';
-                ctx.fillText(`BOMBA: ${nextBomba}`, W - 10, 30);
+                ctx.textAlign = 'left';
+                ctx.fillText(`BOMBA: ${nextBomba}`, 10, 60);
             } else if (bomba.active) {
                 ctx.fillStyle = '#FF0000';
-                ctx.textAlign = 'right';
+                ctx.textAlign = 'left';
                 const timeLeft = Math.ceil(bomba.timer / 60);
-                ctx.fillText(`¡BOMBA! ${timeLeft}s`, W - 10, 30);
+                ctx.fillText(`¡BOMBA! ${timeLeft}s`, 10, 60);
             }
 
             // ------------------- Barra de Vida del ÁRBOL -------------------
@@ -1961,12 +1961,12 @@
             ctx.fillText(`ÁRBOL`, W / 2, barY + barHeight + 25);
 
 
-            // ------------------- Barra de Vida de SANTA -------------------
+            // ------------------- Barra de Vida de SANTA (regresada a su posición original) -------------------
             const santaHealthRatio = santa.health / santa.maxHealth;
             const santaBarWidth = 150;
             const santaBarHeight = 15;
             const santaBarX = W - santaBarWidth - 10;
-            const santaBarY = 60; // Bajado para no solapar con el indicador de bomba
+            const santaBarY = 15; // Regresada a su posición original (arriba)
 
             // Fondo de la barra
             ctx.fillStyle = '#333333';
