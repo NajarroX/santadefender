@@ -145,6 +145,8 @@
         // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
         const POWERUP_DURATION = 300; 
+        const INVINCIBILITY_PHRASE_DURATION = 90; // Duración corta para que sea intermitente (1.5 segundos)
+        const INVINCIBILITY_PHRASE_CHANCE = 0.40; // 40% de probabilidad por frame (para intermitencia)
         
         // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
         const ENEMY_TYPES = [
@@ -196,11 +198,16 @@
         let dialogue = {
             // **FRASE INICIAL ANTI-CAPITALISTA**
             message: "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.",
-            duration: PHRASE_DURATION 
+            duration: PHRASE_DURATION,
+            powerUpMessage: null // Mensaje específico para el Power Up
         };
 
-        // **FRASE DE INVENCIBILIDAD ANTI-CAPITALISTA**
-        const invincibilityPhrase = "¡Fuera de aquí, parásitos capitalistas!";
+        // **FRASES DE INVENCIBILIDAD ANTI-CAPITALISTA (3 frases)**
+        const invincibilityPhrases = [
+            "¡Fuera de aquí, parásitos capitalistas!",
+            "¡El capital no puede con la magia de un Santa sindicalizado!",
+            "¡El único regalo que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
+        ];
         
         // **FRASES SARCÁSTICAS Y CRÍTICAS AL CAPITALISMO**
         const sarcasticPhrases = [
@@ -623,8 +630,10 @@
                 if (santa.invincibleTimer <= 0) {
                     santa.invincible = false;
                     santa.invincibleTimer = 0;
+                    // Muestra el mensaje final de duración normal
                     dialogue.message = "¡Se agotó la invencibilidad!";
                     dialogue.duration = PHRASE_DURATION;
+                    dialogue.powerUpMessage = null; // Limpia el mensaje del power up
                 }
             }
             
@@ -637,8 +646,14 @@
                 santa.invincibleTimer = POWERUP_DURATION; 
                 
                 enemiesDefeatedSincePowerUp = 0; 
-                dialogue.message = invincibilityPhrase; // Usa la nueva frase anti-capitalista
-                dialogue.duration = PHRASE_DURATION;
+                
+                // Selecciona una de las 3 frases aleatoriamente y la guarda
+                dialogue.powerUpMessage = invincibilityPhrases[Math.floor(Math.random() * invincibilityPhrases.length)]; 
+                
+                // Muestra la frase por primera vez
+                dialogue.message = dialogue.powerUpMessage;
+                dialogue.duration = INVINCIBILITY_PHRASE_DURATION;
+                
                 playSound(300, 0.2, 'sawtooth', 700);
             }
         }
@@ -791,8 +806,21 @@
             if (dialogue.duration > 0) {
                 dialogue.duration -= (deltaTime / (1000 / 60)); 
             }
+
+            // 1. Manejo del diálogo de Power Up (40% de probabilidad de aparecer)
+            if (santa.invincibleTimer > 0 && dialogue.powerUpMessage && dialogue.duration <= 0) {
+                if (Math.random() < INVINCIBILITY_PHRASE_CHANCE) {
+                    dialogue.message = dialogue.powerUpMessage;
+                    dialogue.duration = INVINCIBILITY_PHRASE_DURATION; 
+                }
+                // Evita que aparezcan frases normales
+                return;
+            }
+
+
+            // 2. Manejo de las frases sarcásticas normales (Solo si no hay power up activo)
             timeSinceLastPhrase += deltaTime;
-            if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0) {
+            if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0 && santa.invincibleTimer <= 0) {
                 let eligiblePhrases = [];
                 for(const group of sarcasticPhrases) {
                     if (tree.health >= group.min) {
@@ -1109,9 +1137,10 @@
             explosions = []; 
             enemiesDefeatedSincePowerUp = 0; 
             powerUpTimer = 0; 
-            // Usa la nueva frase inicial
+            
             dialogue.message = "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'."; 
             dialogue.duration = PHRASE_DURATION;
+            dialogue.powerUpMessage = null; // Reset el mensaje guardado
             timeSinceLastPhrase = 0;
         }
 
