@@ -450,6 +450,11 @@
         const HEAL_SCORE_HIT = 1000;
         let lastHealScore = 0;
         const GLOW_DURATION = 30;
+        
+        // NUEVO: Constantes para la BOMBA
+        const BOMBA_SCORE_HIT = 500;
+        const BOMBA_DURATION = 300; // 5 segundos a 60 FPS
+        const BOMBA_SIZE = 25;
 
         // Objetos del juego (se mantienen)
         let santa = {
@@ -488,6 +493,16 @@
             ] }
         ];
         let timeSinceLastPhrase = 0;
+        
+        // NUEVO: Variables para la BOMBA
+        let bomba = {
+            active: false,
+            x: 0,
+            y: 0,
+            timer: 0,
+            frame: 0
+        };
+        let lastBombaScore = 0;
 
         // Audio (se mantiene)
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -600,6 +615,14 @@
         function playExplosion(pitch) {
             playSound(pitch, 0.1, 'triangle', pitch * 0.5, 0.6);
         }
+        
+        function playBombaSound() {
+            playSound(150, 0.3, 'sawtooth', 50, 0.8);
+        }
+        
+        function playPowerUpSound() {
+            playSound(300, 0.2, 'square', 700, 0.7);
+        }
 
         function playHealSound() {
             playSound(400, 0.15, 'sine', 800, 0.8);
@@ -648,6 +671,39 @@
                         vx: Math.random() * 6 - 3,
                         vy: Math.random() * 6 - 3,
                         life: 30
+                    });
+                }
+            }
+            update() {
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                });
+                this.particles = this.particles.filter(p => p.life > 0);
+                return this.particles.length > 0;
+            }
+            draw() {
+                this.particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+                });
+            }
+        }
+        
+        // NUEVO: Clase para explosión grande de la bomba
+        class BigExplosion {
+            constructor(x, y, color) {
+                this.particles = [];
+                for (let i = 0; i < 30; i++) {
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        size: Math.random() * 6 + 3,
+                        color: color,
+                        vx: Math.random() * 10 - 5,
+                        vy: Math.random() * 10 - 5,
+                        life: 45
                     });
                 }
             }
@@ -778,11 +834,13 @@
                 `<h3>CONTROLES MÓVIL</h3>
                 <p><strong>Joystick:</strong> Mover a Santa</p>
                 <p><strong>FUEGO:</strong> Disparar</p>
+                <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
                 <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>` :
                 `<h3>CONTROLES PC</h3>
                 <p><strong>WASD / Flechas:</strong> Mover</p>
                 <p><strong>Espacio / Click Izq:</strong> Disparar</p>
                 <p><strong>TAB:</strong> Silenciar Audio</p>
+                <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
                 <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>`;
 
             instructionsDiv.innerHTML = instructionsContent;
@@ -967,6 +1025,95 @@
                 }
             }
         }
+        
+        // NUEVO: Verificar si aparece la bomba
+        function checkBombaSpawn() {
+            if (score >= lastBombaScore + BOMBA_SCORE_HIT && !bomba.active) {
+                lastBombaScore += BOMBA_SCORE_HIT;
+                
+                // Posición aleatoria dentro de la arena (evitando bordes)
+                bomba.x = Math.random() * (W - 100) + 50;
+                bomba.y = Math.random() * (H - 100) + 50;
+                bomba.active = true;
+                bomba.timer = BOMBA_DURATION;
+                bomba.frame = 0;
+                
+                dialogue.message = "¡UN ELFO CON BOMBA HA APARECIDO! ¡COLISIONA CON ÉL!";
+                dialogue.duration = PHRASE_DURATION;
+                playPowerUpSound();
+            }
+        }
+        
+        // NUEVO: Actualizar la bomba
+        function updateBomba(deltaTime) {
+            if (bomba.active) {
+                bomba.timer--;
+                bomba.frame = (bomba.frame + 0.1) % 4; // Animación del elfo
+                
+                if (bomba.timer <= 0) {
+                    bomba.active = false;
+                    dialogue.message = "¡La bomba ha desaparecido! Espera otros 500 pts.";
+                    dialogue.duration = PHRASE_DURATION;
+                }
+                
+                // Verificar colisión con Santa
+                if (checkCollision(santa, {x: bomba.x, y: bomba.y, size: BOMBA_SIZE})) {
+                    activateBomba();
+                }
+            }
+        }
+        
+        // NUEVO: Activar el efecto de la bomba
+        function activateBomba() {
+            let enemiesDestroyed = 0;
+            
+            // Destruir todos los enemigos en pantalla
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                // Crear explosión para cada enemigo
+                explosions.push(new BigExplosion(enemy.x, enemy.y, '#FF0000'));
+                
+                // Texto flotante
+                floatingTexts.push(new FloatingText(enemy.x, enemy.y, '+50', '#FFFF00'));
+                
+                // Sumar puntos y power-up
+                score += 50;
+                enemiesDefeatedSincePowerUp++;
+                enemiesDestroyed++;
+                
+                // Sonido de explosión
+                playExplosion(200 + i * 20);
+            }
+            
+            // Limpiar todos los enemigos
+            enemies = [];
+            
+            // Efecto visual grande en la posición de la bomba
+            explosions.push(new BigExplosion(bomba.x, bomba.y, '#FF9900'));
+            
+            // Mensaje de diálogo
+            dialogue.message = `¡BOOM! ${enemiesDestroyed} enemigos destruidos. +${enemiesDestroyed * 50} pts!`;
+            dialogue.duration = PHRASE_DURATION;
+            
+            // Sonido especial de bomba
+            playBombaSound();
+            
+            // Desactivar la bomba
+            bomba.active = false;
+            
+            // Verificar si se activa el power-up de invencibilidad
+            if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
+                santa.health = santa.maxHealth;
+                santa.invincible = true;
+                santa.invincibleTimer = POWERUP_DURATION;
+                enemiesDefeatedSincePowerUp = 0;
+                dialogue.powerUpMessage = "¡BOMBA PLUS! ¡Invencibilidad activada!";
+                dialogue.message = dialogue.powerUpMessage;
+                dialogue.duration = INVINCIBILITY_PHRASE_DURATION;
+                playSound(300, 0.2, 'sawtooth', 700);
+            }
+        }
 
         function updatePlayerMovement() {
             const originalY = BASE_H / 2 + santa.y - (BASE_H / 2);
@@ -1125,18 +1272,18 @@
                         resetGame();
 
                         // MOSTRAR ELEMENTOS HTML DE LA PORTADA
-                        titleElementsContainer.style.display = 'flex';
-                        mainTitle.style.display = 'block';
+                            titleElementsContainer.style.display = 'flex';
+                            mainTitle.style.display = 'block';
 
-                        // CLAVE: Reanudar la animación del fondo
-                        backgroundPattern.classList.remove('paused');
+                            // CLAVE: Reanudar la animación del fondo
+                            backgroundPattern.classList.remove('paused');
 
-                        if (isMobile) {
-                            controls.style.display = 'none';
-                            shootButton.style.display = 'none';
-                        }
-                        audioToggle.style.display = 'none';
-                        return;
+                            if (isMobile) {
+                                controls.style.display = 'none';
+                                shootButton.style.display = 'none';
+                            }
+                            audioToggle.style.display = 'none';
+                            return;
                     }
                 }
             }
@@ -1196,6 +1343,8 @@
             updateEnemies();
             updateDialogue(deltaTime);
             checkHealHit();
+            checkBombaSpawn(); // NUEVO: Verificar si aparece la bomba
+            updateBomba(deltaTime); // NUEVO: Actualizar la bomba
 
             gameFrame++;
             if (tree.healingGlowTimer > 0) {
@@ -1267,6 +1416,91 @@
 
             drawRect(x - s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black');
             drawRect(x + s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black');
+        }
+        
+        // NUEVO: Dibujar el elfo con bomba
+        function drawBomba() {
+            if (!bomba.active) return;
+            
+            const x = bomba.x;
+            const y = bomba.y;
+            const s = BOMBA_SIZE;
+            const halfS = s / 2;
+            const p = s / 20;
+            
+            // Sombra
+            drawShadow(x, y + halfS + 4, s * 1.2, s * 0.8);
+            
+            // Animación de parpadeo cuando está por desaparecer
+            if (bomba.timer < 60) {
+                if (Math.floor(bomba.timer / 5) % 2 === 0) return;
+            }
+            
+            // Cuerpo del elfo (verde)
+            drawRect(x, y - halfS + p * 2, s * 0.9, s * 0.4, '#00AA00');
+            
+            // Sombrero puntiagudo (rojo con blanco)
+            drawRect(x, y - halfS - p * 2, s * 0.6, s * 0.3, '#FF0000');
+            drawRect(x, y - halfS - p * 4, s * 0.3, s * 0.3, '#FF0000');
+            drawRect(x, y - halfS - p, s * 0.7, p * 2, '#FFFFFF');
+            
+            // Cara
+            drawRect(x, y - s * 0.1, s * 0.4, s * 0.2, '#FFDBAC');
+            drawRect(x - s * 0.1, y - s * 0.2, p, p, 'black');
+            drawRect(x + s * 0.1, y - s * 0.2, p, p, 'black');
+            drawRect(x, y, s * 0.3, p, '#FF0000');
+            
+            // Cuerpo y ropa
+            drawRect(x, y + s * 0.2, s * 1.0, s * 0.4, '#00AA00');
+            drawRect(x, y + s * 0.4, s * 0.8, s * 0.2, '#8B4513');
+            
+            // Brazos
+            const armFrame = Math.floor(bomba.frame);
+            let armOffset = 0;
+            if (armFrame === 0 || armFrame === 2) {
+                armOffset = s * 0.15;
+            } else {
+                armOffset = -s * 0.15;
+            }
+            
+            drawRect(x - s * 0.4 + armOffset, y + s * 0.1, s * 0.2, s * 0.3, '#00AA00');
+            drawRect(x + s * 0.4 - armOffset, y + s * 0.1, s * 0.2, s * 0.3, '#00AA00');
+            
+            // La BOMBA (en las manos)
+            const bombSize = s * 0.3;
+            const bombColor = bomba.timer < 100 ? '#FF0000' : '#FF9900';
+            
+            // Bomba en mano izquierda
+            drawCircle(x - s * 0.4 + armOffset, y + s * 0.25, bombSize, bombColor);
+            drawRect(x - s * 0.4 + armOffset, y + s * 0.25 - bombSize/3, bombSize/2, bombSize/4, '#666666');
+            
+            // Bomba en mano derecha
+            drawCircle(x + s * 0.4 - armOffset, y + s * 0.25, bombSize, bombColor);
+            drawRect(x + s * 0.4 - armOffset, y + s * 0.25 - bombSize/3, bombSize/2, bombSize/4, '#666666');
+            
+            // Mecha parpadeante
+            if (Math.floor(gameFrame / 10) % 2 === 0) {
+                drawRect(x - s * 0.4 + armOffset, y + s * 0.25 - bombSize, bombSize/3, bombSize/2, '#FFFF00');
+                drawRect(x + s * 0.4 - armOffset, y + s * 0.25 - bombSize, bombSize/3, bombSize/2, '#FFFF00');
+            }
+            
+            // Piernas
+            drawRect(x - s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#8B4513');
+            drawRect(x + s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#8B4513');
+            
+            // Indicador visual del tiempo restante
+            if (bomba.timer < 120) {
+                const timeAlpha = bomba.timer / 120;
+                ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + 0.5 * Math.sin(gameFrame * 0.2)})`;
+                ctx.beginPath();
+                ctx.arc(x, y - s * 1.5, s * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '10px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.ceil(bomba.timer / 60), x, y - s * 1.5 + 3);
+            }
         }
 
         // NUEVO: Dibuja los personajes y el árbol para la portada (POSICIÓN A ESCALA)
@@ -1393,6 +1627,7 @@
             drawEnemies();
             drawBullets();
             drawSanta(santa.x, santa.y, santa.size, santa.frame);
+            drawBomba(); // NUEVO: Dibujar la bomba si está activa
             explosions.forEach(exp => exp.draw());
 
             floatingTexts.forEach(t => t.draw());
@@ -1679,6 +1914,19 @@
             ctx.fillStyle = '#FFD700'; // Color Oro
             ctx.textAlign = 'left';
             ctx.fillText(`PUNTOS: ${score}`, 10, 30);
+            
+            // ------------------- Indicador de BOMBA -------------------
+            const nextBomba = BOMBA_SCORE_HIT - (score - lastBombaScore);
+            if (nextBomba > 0) {
+                ctx.fillStyle = '#FF9900';
+                ctx.textAlign = 'right';
+                ctx.fillText(`BOMBA: ${nextBomba}`, W - 10, 30);
+            } else if (bomba.active) {
+                ctx.fillStyle = '#FF0000';
+                ctx.textAlign = 'right';
+                const timeLeft = Math.ceil(bomba.timer / 60);
+                ctx.fillText(`¡BOMBA! ${timeLeft}s`, W - 10, 30);
+            }
 
             // ------------------- Barra de Vida del ÁRBOL -------------------
             const treeHealthRatio = tree.health / tree.maxHealth;
@@ -1718,7 +1966,7 @@
             const santaBarWidth = 150;
             const santaBarHeight = 15;
             const santaBarX = W - santaBarWidth - 10;
-            const santaBarY = 15;
+            const santaBarY = 60; // Bajado para no solapar con el indicador de bomba
 
             // Fondo de la barra
             ctx.fillStyle = '#333333';
@@ -1846,6 +2094,10 @@
             dialogue.duration = PHRASE_DURATION;
             dialogue.powerUpMessage = null;
             timeSinceLastPhrase = 0;
+            
+            // NUEVO: Resetear la bomba
+            bomba.active = false;
+            lastBombaScore = 0;
         }
 
         // OCULTAR CONTROLES AL INICIO
