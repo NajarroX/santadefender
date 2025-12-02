@@ -19,8 +19,8 @@
             flex-direction: column;
             justify-content: center; 
             align-items: center;
-            /* Usamos 100vh como base para el body */
-            height: 100vh; 
+            /* CLAVE: Usamos 100dvh para respetar las barras de navegación de los in-app browsers */
+            height: 100dvh; 
             font-family: 'Press Start 2P', monospace;
             position: relative; 
         }
@@ -114,7 +114,7 @@
             top: 0; 
             left: 0; 
             width: 100vw; 
-            /* CLAVE: min-height: 100% para cubrir el body */
+            /* CLAVE: min-height: 100% para cubrir el body (que usa 100dvh) */
             min-height: 100%; 
             z-index: 20; 
             
@@ -1317,7 +1317,7 @@
             drawRect(e.x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333'); 
         }
 
-        // --- FUNCIÓN MEJORADA: DIBUJA LA PANTALLA DE TÍTULO EN EL CANVAS ---
+        // NUEVO: Dibuja la pantalla de título en el canvas
         function drawTitleScreen() {
              drawTitleCharacters();
         }
