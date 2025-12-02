@@ -235,6 +235,12 @@
              #instructions h3 {
                  font-size: 14px;
              }
+             
+             /* Ajuste de AudioToggle en móvil */
+             #audioToggle {
+                 font-size: 16px; 
+                 padding: 5px 8px;
+             }
         }
         
         /* --- CLAVE: AJUSTES ESPECÍFICOS PARA MÓVIL VERTICAL (pantallas muy estrechas/altas) --- */
@@ -261,24 +267,41 @@
              #instructions h3 {
                  font-size: 12px;
              }
+             
+             /* Ajuste de AudioToggle en móvil vertical */
+             #audioToggle {
+                 font-size: 14px; 
+                 padding: 4px 6px;
+             }
         }
         
-        /* --- Control de Audio y Controles Táctiles (Se mantienen) --- */
+        /* --- Control de Audio y Controles Táctiles (Mejora Visual) --- */
+        
+        /* --- Control de Audio --- */
         #audioToggle {
             position: fixed; 
-            top: 10px;
-            left: 10px;
+            top: 15px; /* Más espacio arriba */
+            left: 15px; /* Más espacio a la izquierda */
             z-index: 40; 
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: 2px solid #cc0000;
-            border-radius: 5px;
-            padding: 5px 10px;
+            
+            /* Nuevo Estilo Retro */
+            background: #000;
+            color: #FFD700; /* Oro */
+            border: 4px solid #CC0000; /* Borde rojo grueso */
+            box-shadow: 0 0 10px #FF0000; /* Brillo */
+            border-radius: 0; /* Cuadrado */
+            
+            padding: 8px 12px;
             font-size: 20px;
             cursor: pointer;
             user-select: none;
             display: none;
             pointer-events: auto;
+            font-family: 'Press Start 2P', monospace; /* Aplicamos la fuente retro */
+        }
+        
+        #audioToggle:active {
+            transform: scale(0.95);
         }
 
         .controls {
@@ -294,7 +317,10 @@
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            background-color: rgba(0, 0, 0, 0.5);
+            /* Estilo Retro - Más sólido y brillante */
+            background-color: rgba(34, 34, 34, 0.7); /* Gris oscuro */
+            border: 3px solid #FFD700;
+            box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -304,9 +330,12 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.7);
+            /* Estilo Retro - Mango llamativo */
+            background-color: #CC0000; 
+            border: 4px solid #FFD700;
             position: absolute;
             touch-action: none;
+            box-shadow: 0 0 5px #FFFFFF;
         }
 
         .action-button {
@@ -316,19 +345,26 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background-color: #cc0000;
-            border: 5px solid #fff;
-            color: #fff;
-            font-size: 1.5em;
+            /* Estilo Retro */
+            background-color: #00FFFF; /* CIAN - Color de disparo */
+            border: 5px solid #000;
+            color: #000;
+            font-size: 1.2em;
+            font-family: 'Press Start 2P', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             user-select: none;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 15px #00FFFF, inset 0 0 5px #FFFFFF;
             pointer-events: auto;
             display: none; 
             z-index: 40;
+        }
+        
+        .action-button:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 5px #00FFFF, inset 0 0 5px #FFFFFF;
         }
     </style>
 </head>
@@ -956,8 +992,10 @@
             } else if (santa.hitTimer === 0) {
                 const nx = santa.dirX / magnitude;
                 const ny = santa.dirY / magnitude;
-                santa.x += nx * PLAYER_SPEED;
-                santa.y += ny * PLAYER_SPEED;
+                const speed = (santa.invincibleTimer > 0) ? PLAYER_SPEED * 1.5 : PLAYER_SPEED; 
+
+                santa.x += nx * speed;
+                santa.y += ny * speed;
                 santa.frame = (santa.frame + 0.1) % 2; 
             }
 
@@ -1070,6 +1108,7 @@
                 if (!destroyed && checkCollision(enemy, tree)) {
                     tree.health -= 1;
                     
+                    // CLAVE: Activar el temporizador de glitch
                     tree.damageGlitchTimer = GLITCH_DURATION; 
                     
                     enemies.splice(i, 1);
@@ -1326,11 +1365,30 @@
         function drawGameObjects() { 
             ctx.clearRect(0, 0, W, H); 
             
-            ctx.filter = 'none';
+            // --- INICIO DE EFECTOS DEL ÁRBOL (Glitch) ---
+            if (tree.damageGlitchTimer > 0) {
+                // 1. Temblor (Transformación)
+                const shakeX = Math.random() * 4 - 2; // Desplazamiento de -2 a 2
+                const shakeY = Math.random() * 4 - 2;
+                ctx.setTransform(1, 0, 0, 1, shakeX, shakeY); 
+                
+                // 2. Glitch de Color (Filtro)
+                const hue = Math.floor(Math.random() * 360);
+                ctx.filter = `hue-rotate(${hue}deg) brightness(1.5)`;
+            } else {
+                ctx.filter = 'none';
+                ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            }
+            // --- FIN DE EFECTOS DEL ÁRBOL ---
+
             ctx.globalAlpha = 1;
-            ctx.setTransform(1, 0, 0, 1, 0, 0); 
-            
+
             drawTree();
+            
+            // Revertir la transformación y el filtro antes de dibujar otros elementos (enemigos/Santa/HUD)
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.filter = 'none';
+
             drawEnemies();
             drawBullets();
             drawSanta(santa.x, santa.y, santa.size, santa.frame); 
@@ -1411,9 +1469,6 @@
             drawCircle(tree.x + 0, SECTIONS_CONFIG[2].yCenter + tree.size * 0.5, tree.size * 0.1, lightColors[(pulse + 2) % 3]);
 
             drawRect(tree.x, SECTIONS_CONFIG[0].yCenter - h3 * 0.5 - tree.size * 0.2, tree.size * 0.25, tree.size * 0.25, 'yellow');
-            
-            ctx.setTransform(1, 0, 0, 1, 0, 0); 
-            ctx.filter = 'none';
         }
 
         function drawEnemies() { 
@@ -1476,17 +1531,20 @@
 
         function drawBullets() { 
             bullets.forEach(b => {
+                ctx.shadowColor = b.color;
+                ctx.shadowBlur = 5;
                 drawRect(b.x, b.y, b.size, b.size, b.color);
+                ctx.shadowBlur = 0;
             });
         }
         
         function drawDialogueBubble(x, y, message) { 
-            const FONT_SIZE = 16;
+            const FONT_SIZE = 14; 
             const MAX_WIDTH_CHARS = 25; 
             const PADDING = 8;
             const LINE_HEIGHT = FONT_SIZE + 4;
             
-            ctx.font = `${FONT_SIZE}px monospace`;
+            ctx.font = `${FONT_SIZE}px 'Press Start 2P', monospace`;
             ctx.textAlign = 'center';
 
             let lines = [message];
@@ -1519,9 +1577,12 @@
             const bubbleX = x - bubbleW / 2;
             const bubbleY = y - santa.size - bubbleH - 10; 
 
-            ctx.fillStyle = 'white';
+            // Caja de texto con fondo oscuro y borde brillante
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'; // Fondo oscuro casi negro
             ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
             
+            // Punta del diálogo
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
             ctx.beginPath();
             ctx.moveTo(x - 5, bubbleY + bubbleH);
             ctx.lineTo(x + 5, bubbleY + bubbleH);
@@ -1529,7 +1590,12 @@
             ctx.closePath();
             ctx.fill();
 
-            ctx.fillStyle = 'black';
+            // Borde del cuadro de diálogo
+            ctx.strokeStyle = '#00FFFF'; // Color cian brillante
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bubbleX, bubbleY, bubbleW, bubbleH);
+            
+            ctx.fillStyle = '#00FFFF'; // Color del texto (Cian)
             let currentTextY = bubbleY + PADDING + LINE_HEIGHT * 0.75;
             
             lines.forEach((line, index) => {
@@ -1539,56 +1605,81 @@
 
 
         function drawHUD() { 
-            ctx.fillStyle = 'white';
-            ctx.font = '20px monospace';
+            // Configuramos un estilo base para el HUD
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 5;
+            ctx.lineWidth = 3; // Grosor de los bordes
             
+            ctx.font = '20px "Press Start 2P", monospace'; // Aplicamos la fuente retro al canvas
+            
+            // ------------------ Puntuación ------------------
+            ctx.fillStyle = '#FFD700'; // Color Oro
             ctx.textAlign = 'left';
-            ctx.fillText(`Puntuación: ${score}`, 10, 30);
+            ctx.fillText(`PUNTOS: ${score}`, 10, 30);
             
+            // ------------------ Barra de Vida del ÁRBOL ------------------
             const treeHealthRatio = tree.health / tree.maxHealth;
             const barWidth = 300;
-            const barHeight = 15;
+            const barHeight = 20; // Un poco más alta
             const barX = W / 2 - barWidth / 2;
             const barY = 15;
             
+            // GLOW de curación
             if (tree.healingGlowTimer > 0) {
-                const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.5;
+                const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.7;
                 ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha})`;
-                ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
+                ctx.fillRect(barX - 8, barY - 8, barWidth + 16, barHeight + 16);
             }
-
-            ctx.strokeStyle = '#00aa00';
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
-
+            
+            // Fondo de la barra
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Relleno de salud
             ctx.fillStyle = treeHealthRatio > 0.5 ? '#00FF00' : (treeHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
             ctx.fillRect(barX, barY, barWidth * treeHealthRatio, barHeight);
+            
+            // Borde Doble
+            ctx.strokeStyle = '#000000';
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight + 2);
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
-            ctx.fillText(`ÁRBOL: ${tree.health}/${tree.maxHealth}`, W / 2, barY + barHeight + 20);
+            ctx.fillText(`ÁRBOL`, W / 2, barY + barHeight + 25);
 
+
+            // ------------------ Barra de Vida de SANTA ------------------
             const santaHealthRatio = santa.health / santa.maxHealth;
             const santaBarWidth = 150;
             const santaBarHeight = 15;
             const santaBarX = W - santaBarWidth - 10;
             const santaBarY = 15;
 
-            ctx.strokeStyle = 'white';
-            ctx.strokeRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
-
-            ctx.fillStyle = santaHealthRatio > 0.5 ? '#00FF00' : (santaHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
+            // Fondo de la barra
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
+            
+            // Relleno de salud
+            ctx.fillStyle = santaHealthRatio > 0.5 ? '#00FFFF' : (santaHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
             ctx.fillRect(santaBarX, santaBarY, santaBarWidth * santaHealthRatio, santaBarHeight);
+            
+            // Borde Doble
+            ctx.strokeStyle = '#000000';
+            ctx.strokeRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(santaBarX - 1, santaBarY - 1, santaBarWidth + 2, santaBarHeight + 2);
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'right';
-            ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
-            
-            
-            // --- LÓGICA DE BARRA DE POWER UP ---
+            ctx.fillText(`SANTA`, W - 10, santaBarY + santaBarHeight + 5);
+
+            // ------------------ Barra de POWER UP ------------------
             const powerBarWidth = 300;
             const powerBarHeight = 15;
             const powerBarX = W / 2 - powerBarWidth / 2;
-            const powerBarY = H - 30; 
+            const powerBarY = H - 35; // Más bajo y separado
             
             let powerColor = '#FF00FF';
             let barFillWidth;
@@ -1605,21 +1696,40 @@
                 powerColor = '#FF00FF'; 
                 barText = `POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`;
             }
+            
+            // Fondo de la barra de poder
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
 
-            ctx.strokeStyle = powerColor;
-            ctx.strokeRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
-
+            // Relleno de poder (con glow si está activo)
             ctx.fillStyle = powerColor;
+            
+            if (santa.invincibleTimer > 0) {
+                ctx.shadowColor = powerColor;
+                ctx.shadowBlur = 10;
+            }
             ctx.fillRect(powerBarX, powerBarY, barFillWidth, powerBarHeight);
+            
+            // Restaurar sombras para el borde
+            ctx.shadowBlur = 5;
+
+            // Borde Doble
+            ctx.strokeStyle = '#000000';
+            ctx.strokeRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.strokeRect(powerBarX - 1, powerBarY - 1, powerBarWidth + 2, powerBarHeight + 2);
+            
+            // Restaurar sombras para el texto
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.fillText(barText, W / 2, powerBarY - 10);
-            // --- FIN LÓGICA DE BARRA DE POWER UP ---
             
-            if (dialogue.duration > 0) {
-                drawDialogueBubble(santa.x, santa.y, dialogue.message);
-            }
+            // Limpiar sombras para el resto del renderizado
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
         }
 
 
@@ -1647,8 +1757,10 @@
                 backgroundMusicSource = null;
             }
             
-            santa.x = BASE_W / 2;
-            santa.y = BASE_H / 2;
+            // CAMBIO CLAVE: Posición de Santa (Inferior Izquierda del Árbol)
+            santa.x = BASE_W / 2 - tree.size * 2; 
+            santa.y = BASE_H / 2 + tree.size * 2;
+            
             santa.frame = 0;
             santa.health = santa.maxHealth;
             santa.invincible = false;
