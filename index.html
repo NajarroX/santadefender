@@ -142,7 +142,7 @@
         const PHRASE_DURATION = 300; 
         const PHRASE_INTERVAL = 8000; 
         const HIT_DURATION = 10; // Duración de la animación de golpe de Santa
-        const GLITCH_DURATION = 15; // NUEVO: Duración del efecto glitch en el árbol
+        const GLITCH_DURATION = 15; // Duración del efecto glitch en el árbol
         
         // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
@@ -190,7 +190,7 @@
             health: 50,
             maxHealth: 50,
             healingGlowTimer: 0, 
-            damageGlitchTimer: 0 // NUEVO: Temporizador de glitch
+            damageGlitchTimer: 0 
         };
         const treeHealthMax = tree.maxHealth;
 
@@ -199,7 +199,7 @@
         let explosions = []; 
         let floatingTexts = []; 
         let score = 0;
-        let enemiesDefeatedSincePowerUp = 0; 
+        let enemiesDefeatedSincePowerUp = 0; // REQUERIDO: Variable para la barra de PowerUp
         let powerUpTimer = 0; 
         let gameFrame = 0; 
         
@@ -633,7 +633,7 @@
                         enemies.splice(j, 1); 
                         bullets.splice(i, 1); 
                         score += 10;
-                        enemiesDefeatedSincePowerUp++;
+                        enemiesDefeatedSincePowerUp++; // CONTEO DE POWERUP
                         playExplosion(300);
                         
                         hit = true;
@@ -663,7 +663,7 @@
                 santa.health = santa.maxHealth; 
                 santa.invincible = true;
                 santa.invincibleTimer = POWERUP_DURATION; 
-                enemiesDefeatedSincePowerUp = 0; 
+                enemiesDefeatedSincePowerUp = 0; // RESET DE CONTEO
                 dialogue.powerUpMessage = invincibilityPhrases[Math.floor(Math.random() * invincibilityPhrases.length)]; 
                 dialogue.message = dialogue.powerUpMessage;
                 dialogue.duration = INVINCIBILITY_PHRASE_DURATION;
@@ -909,7 +909,6 @@
             if (tree.healingGlowTimer > 0) {
                 tree.healingGlowTimer--;
             }
-            // NO TOCAR damageGlitchTimer aquí, se decrementa en drawTree
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -1039,6 +1038,7 @@
         }
         
         function drawGameObjects() {
+            // Aplicar Glitch de Invencibilidad a todo el fondo
             if (santa.invincibleTimer > 0) {
                 applyPsychedelicGlitch();
             } else {
@@ -1065,7 +1065,7 @@
                  ctx.filter = 'none';
                  ctx.globalAlpha = 1;
                  ctx.setTransform(1, 0, 0, 1, 0, 0); 
-                 applyPsychedelicGlitch(); 
+                 applyPsychedelicGlitch(); // Reaplicar glitch para enemigos y balas
             }
 
             drawEnemies();
@@ -1090,7 +1090,7 @@
             const treeBaseY = tree.y + tree.size / 2;
             const treeW = tree.size;
             
-            // --- NUEVO: APLICAR EFECTO GLITCH DE DAÑO ---
+            // --- APLICAR EFECTO GLITCH DE DAÑO ---
             if (tree.damageGlitchTimer > 0) {
                 // Reducir el timer
                 tree.damageGlitchTimer--;
@@ -1326,7 +1326,46 @@
             ctx.textAlign = 'right';
             ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
             
-            // Diálogo
+            
+            // --- NUEVA: BARRA DE POWER-UP ---
+            const powerUpRatio = Math.min(1, enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
+            const powerBarWidth = 300;
+            const powerBarHeight = 15;
+            const powerBarX = W / 2 - powerBarWidth / 2;
+            const powerBarY = H - 30; // Posicionada en la parte inferior
+
+            // 1. Efecto Glitch Frenético (Parpadeo y Desplazamiento)
+            let glitchOffset = 0;
+            let barColor = '#FF00FF'; // Color base (Púrpura/Magia)
+
+            if (powerUpRatio === 1) {
+                // Si la barra está llena, aplicamos el glitch visual
+                glitchOffset = Math.random() * 6 - 3; // Desplazamiento horizontal aleatorio
+                barColor = (Math.floor(gameFrame / 5) % 2 === 0) ? '#00FFFF' : '#FF00FF'; // Parpadeo cian/magenta
+
+                // Aplicar filtro de color intenso al contexto *solo* para esta barra
+                ctx.filter = `saturate(300%) hue-rotate(${Math.random() * 360}deg)`;
+            } else {
+                ctx.filter = 'none';
+            }
+
+            // Dibujar el Contorno de la Barra (con o sin glitch offset)
+            ctx.strokeStyle = barColor;
+            ctx.strokeRect(powerBarX + glitchOffset, powerBarY, powerBarWidth, powerBarHeight);
+
+            // Dibujar la barra de progreso
+            ctx.fillStyle = barColor;
+            ctx.fillRect(powerBarX + glitchOffset, powerBarY, powerBarWidth * powerUpRatio, powerBarHeight);
+
+            // Reiniciar el filtro después de dibujar la barra
+            ctx.filter = 'none';
+
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText(`POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`, W / 2, powerBarY - 10);
+            // ---------------------------------
+            
+            // Diálogo (esto ya estaba y va al final)
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
@@ -1367,14 +1406,14 @@
             santa.hitTimer = 0;
             tree.health = tree.maxHealth;
             tree.healingGlowTimer = 0; 
-            tree.damageGlitchTimer = 0; // RESET
+            tree.damageGlitchTimer = 0; 
             score = 0;
             lastHealScore = 0;
             enemies = [];
             bullets = [];
             explosions = []; 
             floatingTexts = [];
-            enemiesDefeatedSincePowerUp = 0; 
+            enemiesDefeatedSincePowerUp = 0; // RESET
             powerUpTimer = 0; 
             gameFrame = 0; 
             
