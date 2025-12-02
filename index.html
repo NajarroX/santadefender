@@ -19,6 +19,7 @@
             flex-direction: column;
             justify-content: center; 
             align-items: center;
+            /* Usamos 100vh como base para el body */
             height: 100vh; 
             font-family: 'Press Start 2P', monospace;
             position: relative; 
@@ -71,7 +72,6 @@
                 -5px -5px 0 #000, 5px -5px 0 #000, -5px 5px 0 #000, 5px 5px 0 #000,
                 0 0 10px #FF0000;
             
-            /* CLAVE: Posición fija y centrada en el viewport */
             position: fixed; 
             top: 5%; 
             left: 50%;
@@ -107,23 +107,23 @@
             height: 100%;
         }
         
-        /* --- Contenedor de elementos HTML de la Portada (FIJO EN EL VIEWPORT) --- */
+        /* --- Contenedor de elementos HTML de la Portada (ABSOLUTE EN EL BODY) --- */
         .title-elements-container {
-            /* CLAVE: Posición fija que cubre 100% del viewport */
-            position: fixed; 
+            /* CLAVE: Posición absoluta en el body */
+            position: absolute; 
             top: 0; 
             left: 0; 
             width: 100vw; 
-            height: 100vh; 
+            /* CLAVE: min-height: 100% para cubrir el body */
+            min-height: 100%; 
             z-index: 20; 
             
             display: flex;
             flex-direction: column;
-            justify-content: space-between; 
+            justify-content: flex-start; /* Dejamos que el spacer empuje */
             align-items: center;
             pointer-events: none; 
             
-            /* AJUSTE CLAVE: Padding superior, sin padding inferior para usar margin-bottom en #controlArea */
             padding: 5vh 0 0; 
         }
         
@@ -136,12 +136,14 @@
         /* Contenedor para el Botón y las Instrucciones */
         #controlArea {
             pointer-events: auto;
+            /* CLAVE: Usamos posición absoluta para forzar el bottom en el viewport */
+            position: absolute; 
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            /* CLAVE: Espacio de 50px de la orilla inferior */
-            margin-bottom: 50px; 
+            /* CLAVE: Espacio de 40px de la orilla inferior en PC/Grande */
+            bottom: 40px; 
         }
 
         /* --- Estilos del Botón de Inicio --- */
@@ -156,7 +158,7 @@
             box-shadow: 0 5px 0 #FF3333, 0 8px 0 #990000; 
             cursor: pointer;
             text-align: center;
-            margin-bottom: 15px; /* Mantiene la distancia con la caja de instrucciones */
+            margin-bottom: 15px; 
             line-height: 1;
             user-select: none;
             font-family: 'Press Start 2P', monospace;
@@ -183,7 +185,7 @@
             font-size: 14px;
             line-height: 1.5;
             text-align: center;
-            margin-bottom: 15px; /* Margen para separarlo del botón de inicio */
+            margin-bottom: 15px; 
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
         }
         
@@ -212,13 +214,12 @@
              }
              
              .title-elements-container {
-                /* Ajuste del padding superior en móvil */
                 padding: 2vh 0 0; 
              }
              
              #controlArea {
                 /* CLAVE: Espacio de 30px de la orilla inferior en tablet/móvil horizontal */
-                margin-bottom: 30px; 
+                bottom: 30px; 
              }
 
              #startButton {
@@ -250,7 +251,7 @@
              
              #controlArea {
                  /* CLAVE: Espacio de 20px en móvil vertical para máxima seguridad */
-                 margin-bottom: 20px; 
+                 bottom: 20px; 
              }
              
              #instructions {
@@ -478,7 +479,7 @@
             { freq: C4, duration: 2.0 } 
         ];
 
-        function startBackgroundMusic() { /* ... (se mantiene) ... */
+        function startBackgroundMusic() { 
             if (backgroundMusicSource) {
                 if (backgroundMusicSource.playbackState === backgroundMusicSource.PLAYING_STATE) {
                     try { backgroundMusicSource.stop(audioContext.currentTime); } catch (e) {}
@@ -532,7 +533,7 @@
             playSequence(audioContext.currentTime);
         }
 
-        function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) { /* ... (se mantiene) ... */
+        function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) { 
             if (isMuted) return;
 
             if (audioContext.state === 'suspended') {
@@ -559,15 +560,15 @@
             oscillator.stop(audioContext.currentTime + duration);
         }
 
-        function playExplosion(pitch) { /* ... (se mantiene) ... */
+        function playExplosion(pitch) { 
             playSound(pitch, 0.1, 'triangle', pitch * 0.5, 0.6);
         }
 
-        function playHealSound() { /* ... (se mantiene) ... */
+        function playHealSound() { 
             playSound(400, 0.15, 'sine', 800, 0.8); 
         }
 
-        function toggleAudio() { /* ... (se mantiene) ... */
+        function toggleAudio() { 
             isMuted = !isMuted;
             if (isMuted) {
                 masterGain.gain.setValueAtTime(0, audioContext.currentTime);
@@ -598,7 +599,7 @@
         });
         
         // --- CLASE EXPLOSIÓN (Se mantiene) ---
-        class Explosion { /* ... (se mantiene) ... */
+        class Explosion { 
             constructor(x, y, color) {
                 this.particles = [];
                 for (let i = 0; i < 10; i++) {
@@ -631,7 +632,7 @@
         }
 
         // --- CLASE PARA TEXTOS FLOTANTES (Se mantiene) ---
-        class FloatingText { /* ... (se mantiene) ... */
+        class FloatingText { 
             constructor(x, y, text, color) {
                 this.x = x;
                 this.y = y;
@@ -735,7 +736,7 @@
 
 
         // --- Llenar las instrucciones de la portada ---
-        function fillInstructions() { /* ... (se mantiene) ... */
+        function fillInstructions() { 
              const instructionsContent = isMobile ? 
                 `<h3>CONTROLES MÓVIL</h3>
                 <p><strong>Joystick:</strong> Mover a Santa</p>
@@ -753,7 +754,7 @@
         
         
         // --- Controles de juego (Joystick y Teclado) ---
-        let keys = {}; /* ... (se mantiene) ... */
+        let keys = {}; 
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
                 if (gameState === 'PLAYING') {
@@ -830,7 +831,7 @@
 
         // --- 5. LÓGICA DEL JUEGO (UPDATE - Se mantiene) ---
 
-        function handleShooting(deltaTime) { /* ... (se mantiene) ... */
+        function handleShooting(deltaTime) { 
             const currentFireRate = (santa.invincibleTimer > 0) ? 50 : santa.fireRate;
             
             if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (santa.invincibleTimer > 0)) {
@@ -857,7 +858,7 @@
             }
         }
         
-        function updateBullets() { /* ... (se mantiene) ... */
+        function updateBullets() { 
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
                 bullet.x += bullet.dirX * BULLET_SPEED;
@@ -888,7 +889,7 @@
             }
         }
         
-        function updatePowerUp(deltaTime) { /* ... (se mantiene) ... */
+        function updatePowerUp(deltaTime) { 
             if (santa.invincibleTimer > 0) {
                 santa.invincibleTimer -= (deltaTime / (1000 / 60)); 
                 if (santa.invincibleTimer <= 0) {
@@ -912,7 +913,7 @@
             }
         }
 
-        function checkHealHit() { /* ... (se mantiene) ... */
+        function checkHealHit() { 
             if (score >= lastHealScore + HEAL_SCORE_HIT) {
                 lastHealScore += HEAL_SCORE_HIT;
 
@@ -930,7 +931,7 @@
             }
         }
 
-        function updatePlayerMovement() { /* ... (se mantiene) ... */
+        function updatePlayerMovement() { 
             const originalY = BASE_H / 2 + santa.y - (BASE_H / 2);
 
             if (!isMobile) {
@@ -963,7 +964,7 @@
             santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
             santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
         }
-        function updateExplosions() { /* ... (se mantiene) ... */
+        function updateExplosions() { 
              for (let i = explosions.length - 1; i >= 0; i--) {
                 if (!explosions[i].update()) {
                     explosions.splice(i, 1);
@@ -971,7 +972,7 @@
             }
         }
         
-        function updateFloatingTexts() { /* ... (se mantiene) ... */
+        function updateFloatingTexts() { 
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 if (!floatingTexts[i].update()) {
                     floatingTexts.splice(i, 1);
@@ -979,7 +980,7 @@
             }
         }
 
-        function spawnEnemies() { /* ... (se mantiene) ... */
+        function spawnEnemies() { 
             if (Math.random() < spawnRate) { 
                 
                 let totalWeight = ENEMY_TYPES.reduce((sum, type) => sum + type.spawnWeight, 0);
@@ -1015,7 +1016,7 @@
             }
         }
 
-        function updateEnemies() { /* ... (se mantiene) ... */
+        function updateEnemies() { 
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 const dx = tree.x - enemy.x;
@@ -1101,7 +1102,7 @@
             }
         }
         
-        function updateDialogue(deltaTime) { /* ... (se mantiene) ... */
+        function updateDialogue(deltaTime) { 
             if (dialogue.duration > 0) {
                 dialogue.duration -= (deltaTime / (1000 / 60)); 
             }
@@ -1131,7 +1132,7 @@
                 }
             }
         }
-        function checkCollision(objA, objB) { /* ... (se mantiene) ... */
+        function checkCollision(objA, objB) { 
              const sizeA = objA.size || 0; 
              const sizeB = objB.size || 0;
 
@@ -1144,7 +1145,7 @@
         }
 
 
-        function updateGame(deltaTime) { /* ... (se mantiene) ... */
+        function updateGame(deltaTime) { 
             updatePlayerMovement();
             updatePowerUp(deltaTime); 
             handleShooting(deltaTime);
@@ -1167,18 +1168,18 @@
 
         // --- 6. RENDERIZADO (DRAW) ---
 
-        function drawRect(x, y, w, h, color) { /* ... (se mantiene) ... */
+        function drawRect(x, y, w, h, color) { 
             ctx.fillStyle = color;
             ctx.fillRect(x - w / 2, y - h / 2, w, h);
         }
-        function drawCircle(x, y, r, color) { /* ... (se mantiene) ... */
+        function drawCircle(x, y, r, color) { 
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fill();
         }
         
-        function drawShadow(x, y, width, height, opacity = 0.35) { /* ... (se mantiene) ... */
+        function drawShadow(x, y, width, height, opacity = 0.35) { 
              ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
              ctx.beginPath();
              ctx.ellipse(x, y, width / 2, height * 0.4 / 2, 0, 0, Math.PI * 2);
@@ -1186,7 +1187,7 @@
         }
 
 
-        function drawSanta(x, y, size, frame) { /* ... (se mantiene) ... */
+        function drawSanta(x, y, size, frame) { 
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
                 return;
             }
@@ -1322,7 +1323,7 @@
         }
 
         
-        function drawGameObjects() { /* ... (se mantiene) ... */
+        function drawGameObjects() { 
             ctx.clearRect(0, 0, W, H); 
             
             ctx.filter = 'none';
@@ -1344,7 +1345,7 @@
             drawHUD();
         }
         
-        function drawTree() { /* ... (se mantiene) ... */
+        function drawTree() { 
             const treeBaseW = tree.size * 2;
             const baseCenterY = tree.y + tree.size / 2;
             
@@ -1415,7 +1416,7 @@
             ctx.filter = 'none';
         }
 
-        function drawEnemies() { /* ... (se mantiene) ... */
+        function drawEnemies() { 
             enemies.forEach(e => {
                 const x = e.x;
                 const y = e.y;
@@ -1473,13 +1474,13 @@
             });
         }
 
-        function drawBullets() { /* ... (se mantiene) ... */
+        function drawBullets() { 
             bullets.forEach(b => {
                 drawRect(b.x, b.y, b.size, b.size, b.color);
             });
         }
         
-        function drawDialogueBubble(x, y, message) { /* ... (se mantiene) ... */
+        function drawDialogueBubble(x, y, message) { 
             const FONT_SIZE = 16;
             const MAX_WIDTH_CHARS = 25; 
             const PADDING = 8;
@@ -1537,7 +1538,7 @@
         }
 
 
-        function drawHUD() { /* ... (se mantiene) ... */
+        function drawHUD() { 
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
             
@@ -1640,7 +1641,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function resetGame() { /* ... (se mantiene) ... */
+        function resetGame() { 
             if (backgroundMusicSource) {
                 try { backgroundMusicSource.stop(); } catch (e) {}
                 backgroundMusicSource = null;
