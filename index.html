@@ -24,7 +24,7 @@
             align-items: center;
             height: 100vh; /* **CLAVE: Llenar el alto del viewport** */
             font-family: 'Press Start 2P', monospace;
-            position: relative;
+            position: relative; /* CLAVE: Referencia para los controles ABSOLUTOS */
         }
 
         /* --- PATRÓN DE FONDO ANIMADO --- */
@@ -123,6 +123,11 @@
             padding-top: 10px;
         }
         
+        /* CLAVE: Este div ocupa el espacio entre el Título y el área de Control/Instrucciones */
+        #characterAreaSpacer {
+            flex-grow: 1; /* Por defecto ocupa el mayor espacio disponible */
+        }
+        
         /* Contenedor para el Botón y las Instrucciones */
         #controlArea {
             pointer-events: auto;
@@ -209,7 +214,37 @@
              }
         }
         
-        /* --- Control de Audio y Controles Táctiles (Se mantienen sin cambios) --- */
+        /* --- CLAVE: AJUSTES ESPECÍFICOS PARA MÓVIL VERTICAL (pantallas muy estrechas/altas) --- */
+        @media (max-width: 600px) and (max-height: 800px) {
+            
+             .title-elements-container {
+                padding-bottom: 10px; /* Reducir padding vertical */
+                padding-top: 5px;
+             }
+
+             #mainTitle {
+                font-size: 32px; /* Reducir más el título */
+                margin: 5px 0;
+             }
+             
+             /* CLAVE: Reducir el crecimiento del espacio intermedio para que las instrucciones suban */
+             #characterAreaSpacer {
+                flex-grow: 0.5; 
+             }
+             
+             #instructions {
+                padding: 5px; /* Reducir padding interno de instrucciones */
+                font-size: 9px;
+             }
+             #instructions h3 {
+                 font-size: 12px;
+             }
+             #startButton {
+                 margin-bottom: 5px; /* Reducir margen inferior del botón */
+             }
+        }
+        
+        /* --- Control de Audio y Controles Táctiles --- */
         #audioToggle {
             position: absolute;
             top: 10px;
@@ -227,13 +262,13 @@
             pointer-events: auto;
         }
 
-        /* Controles Táctiles (Joystick) */
+        /* Controles Táctiles (Joystick) - Referenciados al BODY (position: relative) */
         .controls {
             position: absolute;
             bottom: 20px;
             left: 20px;
             z-index: 20;
-            display: none;
+            display: none; /* Oculto por defecto */
             pointer-events: auto;
         }
 
@@ -274,7 +309,7 @@
             user-select: none;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             pointer-events: auto;
-            display: none;
+            display: none; /* Oculto por defecto */
             z-index: 20;
         }
     </style>
@@ -289,7 +324,7 @@
             
             <h1 id="mainTitle">EL SANTA DEFENDER</h1>
 
-            <div style="flex-grow: 1;">
+            <div id="characterAreaSpacer">
                 </div>
             
             <div id="controlArea">
@@ -300,16 +335,17 @@
                 </div>
             </div>
         </div>
-
-        <button id="audioToggle">🔊</button>
-
-        <div class="controls" id="mobileControls">
-            <div class="joystick-container" id="joystickContainer">
-                <div class="joystick-handle" id="joystickHandle"></div>
-            </div>
-        </div>
-        <div class="action-button" id="shootButton">FUEGO</div>
     </div>
+    
+    <button id="audioToggle">🔊</button>
+
+    <div class="controls" id="mobileControls">
+        <div class="joystick-container" id="joystickContainer">
+            <div class="joystick-handle" id="joystickHandle"></div>
+        </div>
+    </div>
+    <div class="action-button" id="shootButton">FUEGO</div>
+
 
     <script>
         // --- 1. CONFIGURACIÓN INICIAL Y DETECCIÓN ---
@@ -319,6 +355,7 @@
         const BASE_H = 600;
         let W = BASE_W; 
         let H = BASE_H;
+        // La detección móvil es la misma, confiable
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         // Estados del Juego
@@ -704,6 +741,7 @@
         
         function handleStartGame() {
             if (gameState === 'TITLE') {
+                // CLAVE: Reanudar el contexto de audio en una interacción del usuario
                 audioContext.resume();
                 
                 playSound(440, 0.01, 'sine', 440, 0); 
@@ -717,6 +755,7 @@
                 
                 startBackgroundMusic(); 
 
+                // *** ESTO ASEGURA QUE SE MUESTREN SIEMPRE EN EL MÓVIL ***
                 if (isMobile) {
                     controls.style.display = 'block';
                     shootButton.style.display = 'flex';
@@ -1253,7 +1292,9 @@
             const TREE_SIZE = 80; 
             const CHARACTER_SIZE = 50; 
             const OFFSET = 200; 
-            const CENTER_Y = H * 0.55; // Ajuste ligeramente hacia abajo para equilibrar el título y las instrucciones
+            
+            // La posición Y central del canvas relativa a su propio sistema de coordenadas (800x600)
+            const CENTER_Y = H * 0.55; 
 
             tree.x = W / 2;
             tree.y = CENTER_Y;
@@ -1700,6 +1741,11 @@
             timeSinceLastPhrase = 0;
         }
 
+        // OCULTAR CONTROLES AL INICIO
+        if (isMobile) {
+            controls.style.display = 'none';
+            shootButton.style.display = 'none';
+        }
         audioToggle.style.display = 'none';
 
         requestAnimationFrame(gameLoop);
