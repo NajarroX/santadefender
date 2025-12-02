@@ -170,7 +170,7 @@
             size: 20, 
             color: 'red',
             health: 10,
-            maxHealth: 10, 
+            maxHealth: 10,
             dirX: 0,
             dirY: 0,
             shooting: false,
@@ -1208,40 +1208,50 @@
                 
                 // Animación de Movimiento/Pulsación (tamaño variable)
                 const pulse = 1 + Math.sin(gameFrame * 0.1 * e.speed) * 0.05; 
+                // ENEMY_BASE_SIZE es 18 (Tamaño intermedio)
                 const s = ENEMY_BASE_SIZE * pulse; 
                 const color = e.color; 
                 const halfS = s / 2;
                 
-                // Color del traje (más oscuro que el color base del enemigo)
+                // Color del traje
                 let suitColor = color;
                 if (color === '#666666') suitColor = '#444444'; 
                 else if (color === '#990000') suitColor = '#660000'; 
                 else if (color === '#000066') suitColor = '#000044'; 
 
-                // --- 1. CABEZA (Calva y pálida/demoníaca) ---
-                drawRect(x, y - halfS + s * 0.1, s * 0.6, s * 0.4, '#C0C0C0'); 
-
-                // --- 2. DETALLES FACIALES (Gafas y Bigote) ---
-                // Gafas Oscuras (Rectángulo negro que cubre los ojos)
-                drawRect(x, y - s * 0.1, s * 0.5, s * 0.15, 'black'); 
+                // --- 1. CABEZA CABEZONA CON DETALLES (Pelo, Gafas y Barba Zombi) ---
+                const hairColor = '#333333'; // Pelo negro
+                const skinColor = '#B0E0E6'; // Tono de piel: AZUL PÁLIDO (Zombie)
                 
-                // Bigote (Pequeño trazo oscuro debajo de las gafas)
-                drawRect(x, y + s * 0.05, s * 0.3, s * 0.05, '#333333'); 
+                // 1.1. Pelo (Rectángulo superior, aumentado de ancho)
+                drawRect(x, y - halfS + s * 0.0, s * 0.8, s * 0.2, hairColor); 
 
-                // --- 3. CUERPO / TACUCHE ---
-                // Traje principal
-                drawRect(x, y + s * 0.2, s * 0.8, s * 0.6, suitColor);
+                // 1.2. Cara (Parte visible de la frente y mejillas, CENTRADO MÁS ABAJO)
+                // Usamos un tamaño más grande para la cara para el efecto cabezón.
+                drawRect(x, y - halfS + s * 0.25, s * 0.6, s * 0.2, skinColor); 
 
-                // Cuello de la camisa (Blanco)
-                drawRect(x, y - s * 0.05, s * 0.2, s * 0.1, 'white');
-
-                // Corbata (Color base del enemigo, para identificar tipo)
-                drawRect(x, y + s * 0.15, s * 0.1, s * 0.3, color); 
+                // 1.3. Gafas Oscuras (Rectángulo negro que cubre los ojos/nariz)
+                drawRect(x, y - halfS + s * 0.25, s * 0.7, s * 0.2, 'black'); 
                 
-                // --- 4. PIERNAS Y ZAPATOS ---
-                // Simulación de dos piernas (más oscuras)
-                drawRect(x - s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#333333'); 
-                drawRect(x + s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#333333'); 
+                // 1.4. Barba (Aumentada y más baja)
+                drawRect(x, y - halfS + s * 0.5, s * 0.8, s * 0.25, '#666666'); 
+                
+
+                // --- 2. CUERPO / TACUCHE (El cuerpo debe verse pequeño en comparación) ---
+                // Traje principal (Comienza más abajo, en y + s * 0.45)
+                drawRect(x, y + s * 0.45, s * 0.8, s * 0.4, suitColor);
+
+                // Cuello de la camisa (Blanco, reubicado)
+                drawRect(x, y + s * 0.25, s * 0.2, s * 0.1, 'white');
+
+                // Corbata (Color base del enemigo, reubicada)
+                drawRect(x, y + s * 0.35, s * 0.1, s * 0.2, color); 
+                
+                // --- 3. PIERNAS Y ZAPATOS ---
+                // Reubicadas para que estén debajo del nuevo cuerpo
+                const legY = y + s * 0.7;
+                drawRect(x - s * 0.15, legY, s * 0.2, s * 0.3, '#333333'); 
+                drawRect(x + s * 0.15, legY, s * 0.2, s * 0.3, '#333333'); 
             });
         }
 
