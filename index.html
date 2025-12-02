@@ -844,8 +844,13 @@
             }
         }
         function checkCollision(objA, objB) {
-            return objA.x < objB.x + objB.size && objA.x + objA.size > objB.x &&
-                   objA.y < objB.y + objB.size && objA.y + objB.size > objB.y;
+             const sizeA = objA.size || 0; 
+             const sizeB = objB.size || 0;
+
+             return objA.x < objB.x + sizeB && 
+                    objA.x + sizeA > objB.x &&
+                    objA.y < objB.y + sizeB && 
+                    objA.y + sizeA > objB.y;
         }
 
 
@@ -879,6 +884,36 @@
             ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fill();
         }
+
+        /**
+         * Función para convertir HUE (0-360) a un color RGB hexadecimal.
+         */
+        function hueToRgb(p) {
+            const h = p % 360;
+            const chroma = 255; 
+            const x = chroma * (1 - Math.abs((h / 60) % 2 - 1));
+            
+            let r = 0, g = 0, b = 0;
+
+            if (h >= 0 && h < 60) {
+                [r, g, b] = [chroma, x, 0];
+            } else if (h >= 60 && h < 120) {
+                [r, g, b] = [x, chroma, 0];
+            } else if (h >= 120 && h < 180) {
+                [r, g, b] = [0, chroma, x];
+            } else if (h >= 180 && h < 240) {
+                [r, g, b] = [0, x, chroma];
+            } else if (h >= 240 && h < 300) {
+                [r, g, b] = [x, 0, chroma];
+            } else if (h >= 300 && h < 360) {
+                [r, g, b] = [chroma, 0, x];
+            }
+            
+            // Convertir a hexadecimal
+            const toHex = (c) => Math.round(c).toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+
 
         /**
          * Dibuja a Santa con detalles de 8 bits.
@@ -975,6 +1010,7 @@
         }
         
         function drawGameObjects() {
+            // Aplicar el glitch solo si Santa es invencible (para el fondo)
             if (santa.invincibleTimer > 0) {
                 applyPsychedelicGlitch();
             } else {
@@ -982,6 +1018,7 @@
                 ctx.globalAlpha = 1;
             }
             
+            // Texto de fondo
             const titleText = "EL SANTA DEFENDER";
             const fontSize = 48; 
             const titleColor = '#004d00'; 
@@ -1000,6 +1037,7 @@
             explosions.forEach(exp => exp.draw());
             drawHUD();
             
+            // Restablecer el contexto para evitar que el HUD se vea afectado por el glitch
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
@@ -1018,7 +1056,7 @@
         }
         
         /**
-         * Dibuja el árbol con aura y luces animadas.
+         * Dibuja el árbol con aura y luces animadas (VERSIÓN MEJORADA DE GLOW).
          */
         function drawTree() {
             const healthRatio = tree.health / tree.maxHealth;
@@ -1026,36 +1064,66 @@
             const treeBaseY = tree.y + tree.size / 2;
             const treeW = tree.size;
             
-            // --- 1. Aura de Protección (Baja con el HP) ---
-            const maxAuraSize = 25;
-            const auraSize = maxAuraSize * healthRatio;
-            const alpha = 0.5 * healthRatio; 
+            // --- 1. Aura Iridiscente Pulsante (Basado en el HP) ---
             
-            ctx.fillStyle = `rgba(100, 255, 100, ${alpha})`;
+            // Paso 1: Determinar el color base y el tamaño del glow
+            const hue = (gameFrame * 2) % 360; // Ciclo de 360 grados para el color
+            const auraColor = hueToRgb(hue);
+            
+            // El radio del blur pulsa ligeramente
+            const baseGlow = 10;
+            const glowPulse = Math.sin(gameFrame * 0.1) * 3; // +3 a -3
+            const glowSize = Math.max(0, baseGlow * healthRatio + glowPulse);
+            
+            // Si el HP es muy bajo, el glow es solo rojo para advertir
+            if (healthRatio < 0.2) {
+                ctx.shadowColor = `rgba(255, 0, 0, 1)`;
+                ctx.shadowBlur = baseGlow * 1.2;
+            } else {
+                ctx.shadowColor = auraColor;
+                // El glow se reduce con el HP, pero el mínimo es 5 para que se vea
+                ctx.shadowBlur = Math.max(5, glowSize);
+            }
+            
+            // El offset del aura es ahora el tamaño del glow
+            const auraOffset = Math.max(5, baseGlow * healthRatio * 0.5); 
+
+            // --- 2. Dibujar la Forma del Aura ---
+            // Usamos un color con alfa significativo para forzar la visibilidad del glow
+            ctx.fillStyle = `rgba(255, 255, 255, ${healthRatio * 0.2 + 0.1})`; // Color base más blanco para mejor glow
             ctx.beginPath();
-            ctx.moveTo(tree.x, treeTop - auraSize); 
-            ctx.lineTo(tree.x - treeW - auraSize, treeBaseY + auraSize);
-            ctx.lineTo(tree.x + treeW + auraSize, treeBaseY + auraSize);
+            ctx.moveTo(tree.x, treeTop - auraOffset); 
+            ctx.lineTo(tree.x - treeW - auraOffset, treeBaseY + auraOffset);
+            ctx.lineTo(tree.x + treeW + auraOffset, treeBaseY + auraOffset);
             ctx.closePath();
             ctx.fill();
 
-            // Si hay curación, añade un glow pulsante
+            // --- 3. Glow de Curación (Se superpone al iridiscente) ---
             if (tree.healingGlowTimer > 0) {
                 const glowRatio = tree.healingGlowTimer / GLOW_DURATION;
                 const glowAlpha = Math.sin(Math.PI * (1 - glowRatio)); 
-                ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha * 0.8})`; 
+                
+                ctx.shadowColor = `rgba(0, 255, 0, 1)`; // Color verde fuerte
+                ctx.shadowBlur = 25 * glowAlpha; // Glow grande y brillante
+                
+                // Dibujar un segundo triángulo para el glow verde
+                ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha * 0.5})`; 
                 ctx.beginPath();
-                ctx.moveTo(tree.x, treeTop - auraSize - 5); 
-                ctx.lineTo(tree.x - treeW - auraSize - 5, treeBaseY + auraSize + 5);
-                ctx.lineTo(tree.x + treeW + auraSize + 5, treeBaseY + auraSize + 5);
+                ctx.moveTo(tree.x, treeTop - auraOffset); 
+                ctx.lineTo(tree.x - treeW - auraOffset, treeBaseY + auraOffset);
+                ctx.lineTo(tree.x + treeW + auraOffset, treeBaseY + auraOffset);
                 ctx.closePath();
                 ctx.fill();
             }
 
-            // --- 2. Tronco ---
+            // --- 4. Reiniciar el contexto (Importante antes de dibujar el cuerpo) ---
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+            
+            // --- 5. Tronco ---
             drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
             
-            // --- 3. Cuerpo del Árbol ---
+            // --- 6. Cuerpo del Árbol (Sin cambios, para que no tenga glow) ---
             ctx.fillStyle = tree.color;
             ctx.beginPath();
             ctx.moveTo(tree.x, treeTop); 
@@ -1064,7 +1132,7 @@
             ctx.closePath();
             ctx.fill();
             
-            // --- 4. Luces Animadas ---
+            // --- 7. Luces Animadas ---
             const pulse = Math.floor(gameFrame / 10) % 3; // 3 fases de animación
             const colors = ['yellow', 'red', 'blue'];
             
@@ -1193,7 +1261,7 @@
             const barX = W / 2 - barWidth / 2;
             const barY = 15;
             
-            // Glow de curación (si está activo)
+            // Glow de curación (si está activo) - Solo el glow alrededor de la barra
             if (tree.healingGlowTimer > 0) {
                 const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.5;
                 ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha})`;
