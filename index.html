@@ -6,34 +6,210 @@
     <title>EL SANTA DEFENDER</title>
     
     <style>
+        /* --- FUENTES DE GOOGLE (Para título grueso y retro) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Press+Start+2P&display=swap');
+
+        /* --- ESTILOS BASE y AJUSTE DE VIEWPORT (Clave para eliminar scroll) --- */
         body {
             margin: 0;
             padding: 0;
-            background-color: #222;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
+            /* Fondo: Verde vibrante */
+            background-color: #006600; 
+            overflow: hidden; /* **CLAVE: Evita el scroll** */
+            
+            /* Contenedor principal para centrar el juego */
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
             align-items: center;
-            height: 100vh;
-            font-family: monospace;
+            height: 100vh; /* **CLAVE: Llenar el alto del viewport** */
+            font-family: 'Press Start 2P', monospace;
             position: relative;
         }
 
-        /* Estilo del Canvas Base (relación 800x600) */
-        #gameCanvas {
+        /* --- PATRÓN DE FONDO ANIMADO --- */
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300%; 
+            height: 300%; 
+            z-index: 1; 
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 40px,
+                    rgba(0, 0, 0, 0.1) 40px,
+                    rgba(0, 0, 0, 0.1) 80px
+                ),
+                repeating-linear-gradient(
+                    -45deg,
+                    #004d00, 
+                    #004d00 30px,
+                    #00aa00 30px,
+                    #00aa00 60px
+                );
+            background-size: 150px 150px, 150px 150px;
+            animation: movePattern 20s linear infinite; 
+        }
+
+        @keyframes movePattern {
+            from { background-position: 0 0, 0 0; }
+            to { background-position: 150px 150px, 150px 150px; }
+        }
+
+        /* Contenedor principal que centra el canvas y el overlay */
+        #gameContainer {
+            position: relative;
+            z-index: 10; 
             border: 4px solid #cc0000;
-            background-color: #006600; 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            /* Reglas Responsive: Ahora se ajusta al 98% del viewport */
+            width: 800px; /* Tamaño base */
+            height: 600px; /* Tamaño base */
+            max-width: 98vw; 
+            max-height: 98vh; /* **CLAVE: Maximizando el área visible** */
+            
+            /* Para centrar el contenido (botón/instrucciones/título) */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Estilo del Canvas Base */
+        #gameCanvas {
+            /* NUEVO: Fondo verde 85% opaco para que se vea el patrón pero sin demasiada distracción */
+            background-color: rgba(0, 102, 0, 0.85); 
             touch-action: none; 
             cursor: pointer; 
-            /* Reglas Responsive */
             display: block;
             width: 100%;
             height: 100%;
-            max-width: 100vw;
-            max-height: 100vh;
+        }
+        
+        /* --- TÍTULO PRINCIPAL (Ahora DENTRO del gameContainer) --- */
+        #mainTitle {
+            font-family: 'Bungee Inline', sans-serif;
+            font-size: 80px;
+            color: white;
+            text-align: center;
+            line-height: 0.8;
+            z-index: 20; /* Encima de todo */
+            text-shadow: 
+                -5px -5px 0 #000, 5px -5px 0 #000, -5px 5px 0 #000, 5px 5px 0 #000,
+                0 0 10px #FF0000;
+            
+            /* NUEVO: Ajustes de posicionamiento dentro del contenedor de elementos */
+            margin: 10px 0; 
+        }
+        
+        /* --- Contenedor de elementos HTML de la Portada (sobre el Canvas) --- */
+        .title-elements-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20; 
+            display: flex;
+            flex-direction: column;
+            /* CLAVE: Distribuye el espacio entre los 3 grupos: Título, Personajes (Canvas), Botón/Instrucciones */
+            justify-content: space-between; 
+            align-items: center;
+            pointer-events: none; 
+            padding-bottom: 20px; /* Espacio extra abajo */
+            padding-top: 10px;
+        }
+        
+        /* Contenedor para el Botón y las Instrucciones */
+        #controlArea {
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
         }
 
-        /* --- Control de Audio --- */
+        /* --- Estilos del Botón de Inicio (Dentro del Canvas) --- */
+        #startButton {
+            pointer-events: auto; 
+            padding: 15px 30px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #FFFF00; 
+            background-color: #CC0000; 
+            border: 5px solid #00FFFF; 
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5), 0 0 10px rgba(204, 0, 0, 0.7);
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 10px; 
+            line-height: 1;
+            user-select: none;
+            font-family: 'Press Start 2P', monospace;
+            z-index: 20;
+        }
+
+        #startButton:hover {
+            background-color: #ff3333;
+        }
+
+        /* --- Bloque de Instrucciones (Dentro del Canvas) --- */
+        #instructions {
+            pointer-events: auto; 
+            position: static; 
+            width: 600px;
+            max-width: 85%;
+            padding: 10px;
+            background: rgba(34, 34, 34, 0.9); 
+            border: 3px solid #FFD700; 
+            color: #FFD700;
+            z-index: 20;
+            font-size: 14px;
+            line-height: 1.5;
+            text-align: center;
+            margin-bottom: 10px; /* Menos margen, va dentro de #controlArea */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+        
+        #instructions h3 {
+            margin-top: 0;
+            color: #CC0000;
+            font-size: 16px;
+            border-bottom: 1px dashed #CC0000;
+            padding-bottom: 5px;
+        }
+
+        #instructions p {
+            margin: 5px 0;
+            text-shadow: 1px 1px 2px black;
+        }
+
+
+        /* --- RESPONSIVE GENERAL --- */
+        @media (max-width: 800px) {
+             #mainTitle {
+                font-size: 40px;
+                text-shadow: 
+                    -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000,
+                    0 0 8px #FF0000;
+             }
+             #startButton {
+                font-size: 20px;
+                padding: 10px 20px;
+             }
+             #instructions {
+                font-size: 10px;
+                max-width: 90%;
+             }
+             #instructions h3 {
+                 font-size: 14px;
+             }
+        }
+        
+        /* --- Control de Audio y Controles Táctiles (Se mantienen sin cambios) --- */
         #audioToggle {
             position: absolute;
             top: 10px;
@@ -51,12 +227,12 @@
             pointer-events: auto;
         }
 
-        /* --- Controles Táctiles (Joystick) --- */
+        /* Controles Táctiles (Joystick) */
         .controls {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            z-index: 10;
+            z-index: 20;
             display: none;
             pointer-events: auto;
         }
@@ -99,21 +275,41 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             pointer-events: auto;
             display: none;
+            z-index: 20;
         }
     </style>
 </head>
 <body>
+    <div class="background-pattern"></div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="title-elements-container" id="titleElementsContainer">
+            
+            <h1 id="mainTitle">EL SANTA DEFENDER</h1>
 
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-    <button id="audioToggle">🔊</button>
-
-    <div class="controls" id="mobileControls">
-        <div class="joystick-container" id="joystickContainer">
-            <div class="joystick-handle" id="joystickHandle"></div>
+            <div style="flex-grow: 1;">
+                </div>
+            
+            <div id="controlArea">
+                <div id="instructions">
+                    </div>
+                <div id="startButton">
+                    INICIAR TRANSMISIÓN
+                </div>
+            </div>
         </div>
+
+        <button id="audioToggle">🔊</button>
+
+        <div class="controls" id="mobileControls">
+            <div class="joystick-container" id="joystickContainer">
+                <div class="joystick-handle" id="joystickHandle"></div>
+            </div>
+        </div>
+        <div class="action-button" id="shootButton">FUEGO</div>
     </div>
-    <div class="action-button" id="shootButton">FUEGO</div>
 
     <script>
         // --- 1. CONFIGURACIÓN INICIAL Y DETECCIÓN ---
@@ -128,21 +324,28 @@
         // Estados del Juego
         let gameState = 'TITLE';
 
-        // Referencias a los controles y el nuevo botón de audio
+        // Referencias a los nuevos elementos de la portada
+        const mainTitle = document.getElementById('mainTitle');
+        const startButton = document.getElementById('startButton');
+        const instructionsDiv = document.getElementById('instructions');
+        const gameContainer = document.getElementById('gameContainer');
+        const titleElementsContainer = document.getElementById('titleElementsContainer'); 
+        
+        // Referencias a los controles y el botón de audio
         const controls = document.getElementById('mobileControls');
         const shootButton = document.getElementById('shootButton');
         const joystickContainer = document.getElementById('joystickContainer');
         const joystickHandle = document.getElementById('joystickHandle');
         const audioToggle = document.getElementById('audioToggle');
 
-        // Constantes del juego
+        // Constantes del juego (se mantienen las mismas)
         const PLAYER_SPEED = 4;
         const BULLET_SPEED = 8;
         const JOYSTICK_RADIUS = 75; 
         const PHRASE_DURATION = 300; 
         const PHRASE_INTERVAL = 8000; 
-        const HIT_DURATION = 10; // Duración de la animación de golpe de Santa
-        const GLITCH_DURATION = 15; // Duración del efecto glitch en el árbol
+        const HIT_DURATION = 10; 
+        const GLITCH_DURATION = 15; 
         
         // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
@@ -152,9 +355,9 @@
         
         // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
         const ENEMY_TYPES = [
-            { speed: 1.5, color: '#666666', spawnWeight: 60 }, // Tacuche Gris
-            { speed: 2.5, color: '#990000', spawnWeight: 30 }, // Tacuche Rojo
-            { speed: 1.0, color: '#000066', spawnWeight: 10 } // Tacuche Azul
+            { speed: 1.5, color: '#666666', spawnWeight: 60 },
+            { speed: 2.5, color: '#990000', spawnWeight: 30 },
+            { speed: 1.0, color: '#000066', spawnWeight: 10 }
         ];
         let spawnRate = 0.02;
 
@@ -163,7 +366,7 @@
         let lastHealScore = 0;
         const GLOW_DURATION = 30; 
 
-        // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
+        // --- 2. OBJETOS DEL JUEGO Y ESTADO (se mantienen los mismos) ---
         let santa = {
             x: BASE_W / 2,
             y: BASE_H / 2,
@@ -182,7 +385,7 @@
             hitTimer: 0
         };
 
-        const ENEMY_BASE_SIZE = 18; // TAMAÑO INTERMEDIO PARA EL ENEMIGO
+        const ENEMY_BASE_SIZE = 18; 
 
         let tree = {
             x: BASE_W / 2,
@@ -392,7 +595,7 @@
             }
         });
         
-        // --- CLASE EXPLOSIÓN ---
+        // --- CLASE EXPLOSIÓN (Se mantiene) ---
         class Explosion {
             constructor(x, y, color) {
                 this.particles = [];
@@ -425,21 +628,21 @@
             }
         }
 
-        // --- CLASE PARA TEXTOS FLOTANTES ---
+        // --- CLASE PARA TEXTOS FLOTANTES (Se mantiene) ---
         class FloatingText {
             constructor(x, y, text, color) {
                 this.x = x;
                 this.y = y;
                 this.text = text;
                 this.color = color;
-                this.vy = -1.5; // Velocidad vertical (sube)
-                this.life = 60; // Duración en frames (aprox 1 segundo)
+                this.vy = -1.5; 
+                this.life = 60; 
                 this.maxLife = 60;
             }
             update() {
                 this.y += this.vy;
                 this.life--;
-                return this.life > 0; // Retorna true si sigue vivo
+                return this.life > 0; 
             }
             draw() {
                 const alpha = this.life / this.maxLife;
@@ -469,17 +672,24 @@
             
             let newW, newH;
 
-            if (viewportW / viewportH > aspectR) {
-                newH = viewportH;
-                newW = viewportH * aspectR;
+            // La lógica ahora se basa en el tamaño máximo del contenedor (98vw x 98vh)
+            const maxContainerW = viewportW * 0.98;
+            const maxContainerH = viewportH * 0.98;
+            
+            if (maxContainerW / maxContainerH > aspectR) {
+                // Limitado por la altura
+                newH = maxContainerH;
+                newW = maxContainerH * aspectR;
             } else {
-                newW = viewportW;
-                newH = viewportW / aspectR;
+                // Limitado por la anchura
+                newW = maxContainerW;
+                newH = maxContainerW / aspectR;
             }
             
-            canvas.style.width = newW + 'px';
-            canvas.style.height = newH + 'px';
-
+            // Ajustar el contenedor del juego
+            gameContainer.style.width = newW + 'px';
+            gameContainer.style.height = newH + 'px';
+            
             W = BASE_W;
             H = BASE_H;
             canvas.width = W;
@@ -499,6 +709,10 @@
                 playSound(440, 0.01, 'sine', 440, 0); 
                 
                 gameState = 'PLAYING';
+                
+                // OCULTAR ELEMENTOS HTML DE LA PORTADA
+                titleElementsContainer.style.display = 'none'; 
+
                 resetGame();
                 
                 startBackgroundMusic(); 
@@ -510,14 +724,32 @@
                 audioToggle.style.display = 'block';
             }
         }
-
-        canvas.addEventListener('mousedown', handleStartGame);
-        canvas.addEventListener('touchstart', (e) => {
-            if (gameState === 'TITLE') {
-                e.preventDefault();
-                handleStartGame();
-            }
+        
+        // Lógica de inicio ahora ligada al botón
+        startButton.addEventListener('click', handleStartGame);
+        startButton.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            handleStartGame();
         });
+
+
+        // --- Llenar las instrucciones de la portada ---
+        function fillInstructions() {
+             const instructionsContent = isMobile ? 
+                `<h3>CONTROLES MÓVIL</h3>
+                <p><strong>Joystick:</strong> Mover a Santa</p>
+                <p><strong>FUEGO:</strong> Disparar</p>
+                <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>` :
+                `<h3>CONTROLES PC</h3>
+                <p><strong>WASD / Flechas:</strong> Mover</p>
+                <p><strong>Espacio / Click Izq:</strong> Disparar</p>
+                <p><strong>TAB:</strong> Silenciar Audio</p>
+                <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>`;
+            
+            instructionsDiv.innerHTML = instructionsContent;
+        }
+        fillInstructions(); // Llenar al cargar la página
+        
         
         // --- Controles de juego (Joystick y Teclado) ---
         let keys = {};
@@ -556,16 +788,23 @@
             joystickContainer.addEventListener('touchmove', (e) => {
                 if (!joystickActive || gameState !== 'PLAYING') return;
                 const touch = e.touches[0];
-                let deltaX = touch.clientX - startX;
-                let deltaY = touch.clientY - startY;
+                // Convertir coordenadas de pantalla a relativas al canvas para el joystick
+                const rect = joystickContainer.getBoundingClientRect();
+                const deltaX = (touch.clientX - rect.left - rect.width / 2);
+                const deltaY = (touch.clientY - rect.top - rect.height / 2);
+                
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                let finalX = deltaX;
+                let finalY = deltaY;
+                
                 if (distance > JOYSTICK_RADIUS) {
-                    deltaX = (deltaX / distance) * JOYSTICK_RADIUS;
-                    deltaY = (deltaY / distance) * JOYSTICK_RADIUS;
+                    finalX = (deltaX / distance) * JOYSTICK_RADIUS;
+                    finalY = (deltaY / distance) * JOYSTICK_RADIUS;
                 }
-                joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-                santa.dirX = deltaX / JOYSTICK_RADIUS;
-                santa.dirY = deltaY / JOYSTICK_RADIUS;
+                
+                joystickHandle.style.transform = `translate(${finalX}px, ${finalY}px)`;
+                santa.dirX = finalX / JOYSTICK_RADIUS;
+                santa.dirY = finalY / JOYSTICK_RADIUS;
             });
             const resetJoystick = () => {
                 joystickActive = false;
@@ -589,7 +828,7 @@
         }
 
 
-        // --- 5. LÓGICA DEL JUEGO (UPDATE) ---
+        // --- 5. LÓGICA DEL JUEGO (UPDATE - Se mantiene igual) ---
 
         function handleShooting(deltaTime) {
             const currentFireRate = (santa.invincibleTimer > 0) ? 50 : santa.fireRate;
@@ -629,13 +868,12 @@
                     if (checkCollision(bullet, enemy)) {
                         explosions.push(new Explosion(enemy.x, enemy.y, enemy.color)); 
                         
-                        // Añadir texto de puntuación
                         floatingTexts.push(new FloatingText(enemy.x, enemy.y, '+10', '#00FFFF'));
 
                         enemies.splice(j, 1); 
                         bullets.splice(i, 1); 
                         score += 10;
-                        enemiesDefeatedSincePowerUp++; // CONTEO DE POWERUP
+                        enemiesDefeatedSincePowerUp++; 
                         playExplosion(300);
                         
                         hit = true;
@@ -665,7 +903,7 @@
                 santa.health = santa.maxHealth; 
                 santa.invincible = true;
                 santa.invincibleTimer = POWERUP_DURATION; 
-                enemiesDefeatedSincePowerUp = 0; // RESET DE CONTEO
+                enemiesDefeatedSincePowerUp = 0; 
                 dialogue.powerUpMessage = invincibilityPhrases[Math.floor(Math.random() * invincibilityPhrases.length)]; 
                 dialogue.message = dialogue.powerUpMessage;
                 dialogue.duration = INVINCIBILITY_PHRASE_DURATION;
@@ -705,20 +943,15 @@
             
             const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
 
-            // ANIMACIÓN DE GOLPE (Salto)
             if (santa.hitTimer > 0) {
-                // Pequeño retroceso en Y para simular el golpe
                 santa.y -= 3 * (santa.hitTimer / HIT_DURATION);
                 santa.hitTimer--;
             }
             
-            // Movimiento de IDLE (Respiración)
             if (magnitude === 0 && santa.hitTimer === 0) {
-                // Desplazamiento vertical en IDLE (ciclo sinusoidal)
                 santa.y += Math.sin(gameFrame * 0.05) * 0.2; 
                 santa.frame = 0;
             } else if (santa.hitTimer === 0) {
-                // Movimiento normal
                 const nx = santa.dirX / magnitude;
                 const ny = santa.dirY / magnitude;
                 santa.x += nx * PLAYER_SPEED;
@@ -726,7 +959,6 @@
                 santa.frame = (santa.frame + 0.1) % 2; 
             }
 
-            // Restricción de límites de pantalla
             santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
             santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
         }
@@ -761,7 +993,7 @@
                     }
                 }
 
-                const size = ENEMY_BASE_SIZE; // Usar la nueva constante
+                const size = ENEMY_BASE_SIZE; 
                 const edge = Math.floor(Math.random() * 4); 
                 let x, y;
                 switch (edge) {
@@ -776,7 +1008,8 @@
                     y: y, 
                     size: size, 
                     color: selectedType.color,
-                    speed: selectedType.speed
+                    speed: selectedType.speed,
+                    walkFrame: 0 
                 });
             }
         }
@@ -792,14 +1025,15 @@
                 
                 enemy.x += nx * enemy.speed; 
                 enemy.y += ny * enemy.speed;
+
+                enemy.walkFrame = (enemy.walkFrame + 0.1 * enemy.speed) % 3;
                 
                 let destroyed = false;
 
-                // LÓGICA DE DAÑO A SANTA CON INVENCIBILIDAD
                 if (checkCollision(enemy, santa)) {
                     if (!santa.invincible) {
                         santa.health -= 1;
-                        santa.hitTimer = HIT_DURATION; // ACTIVA ANIMACIÓN DE GOLPE
+                        santa.hitTimer = HIT_DURATION; 
                         explosions.push(new Explosion(enemy.x, enemy.y, 'white'));
                         playSound(150, 0.1, 'square', 100);
                         
@@ -808,6 +1042,10 @@
                             playSound(200, 1.0, 'sine', 50);
                             gameState = 'TITLE';
                             resetGame();
+                            
+                            // MOSTRAR ELEMENTOS HTML DE LA PORTADA
+                            titleElementsContainer.style.display = 'flex'; 
+
                             if (isMobile) {
                                 controls.style.display = 'none';
                                 shootButton.style.display = 'none';
@@ -823,19 +1061,15 @@
                     destroyed = true;
                 }
                 
-                // Lógica de daño al Árbol (Solo si no ha sido destruido al dañar a Santa)
                 if (!destroyed && checkCollision(enemy, tree)) {
                     tree.health -= 1;
                     
-                    // 🔥 ACTIVACIÓN DEL GLITCH DE DAÑO
                     tree.damageGlitchTimer = GLITCH_DURATION; 
                     
                     enemies.splice(i, 1);
                     
-                    // Añadir texto de daño al árbol
                     floatingTexts.push(new FloatingText(tree.x, tree.y - tree.size * 0.8, '-1', '#FF0000'));
                     
-                    // ANIMACIÓN de CHOQUE con el ÁRBOL (Explosión roja/oscura que simula el aplastamiento)
                     explosions.push(new Explosion(enemy.x, enemy.y, '#990000')); 
                     
                     if (tree.health <= 0) {
@@ -843,6 +1077,10 @@
                         playSound(200, 1.0, 'sine', 50);
                         gameState = 'TITLE'; 
                         resetGame(); 
+                        
+                        // MOSTRAR ELEMENTOS HTML DE LA PORTADA
+                        titleElementsContainer.style.display = 'flex'; 
+                        
                         if (isMobile) {
                             controls.style.display = 'none';
                             shootButton.style.display = 'none';
@@ -888,7 +1126,6 @@
              const sizeA = objA.size || 0; 
              const sizeB = objB.size || 0;
 
-             // Ajustar ligeramente la zona de colisión para que sea menos sensible.
              const overlap = 0.8; 
              
              return objA.x < objB.x + sizeB * overlap && 
@@ -914,6 +1151,9 @@
             if (tree.healingGlowTimer > 0) {
                 tree.healingGlowTimer--;
             }
+             if (tree.damageGlitchTimer > 0) { // Restaurar el filtro después del glitch
+                tree.damageGlitchTimer--;
+            }
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -928,9 +1168,17 @@
             ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fill();
         }
+        
+        function drawShadow(x, y, width, height, opacity = 0.35) {
+             ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+             ctx.beginPath();
+             ctx.ellipse(x, y, width / 2, height * 0.4 / 2, 0, 0, Math.PI * 2);
+             ctx.fill();
+        }
+
 
         function hueToRgb(p) {
-            const h = p % 360;
+            const h = (p % 360 + 360) % 360; 
             const chroma = 255; 
             const x = chroma * (1 - Math.abs((h / 60) % 2 - 1));
             
@@ -956,147 +1204,170 @@
 
 
         function drawSanta(x, y, size, frame) {
-            // La invisibilidad es un parpadeo, no necesitamos dibujarlo si está parpadeando
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
                 return;
             }
 
             const s = size; 
             const halfS = s / 2; 
-            const p = s / 20; // 1 pixel de referencia si size es 20
+            const p = s / 20; 
             
-            // Animación de Caminar (piernas alternando)
+            drawShadow(x, y + halfS + p * 6, s * 1.4, s * 0.8);
+
             let legOffset = 0;
             if (santa.dirX !== 0 || santa.dirY !== 0) { 
                 legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15;
             }
 
-            // Animación de Golpeado (retroceso de torso)
             let bodyOffset = 0;
             if (santa.hitTimer > 0) {
                 bodyOffset = -s * 0.1; 
             }
             
-            // Factor de desplazamiento general para centrar el diseño más grande/cabeza
             const headYOffset = -s * 0.2; 
             const bodyYOffset = -s * 0.1; 
 
-            // --- 1. GORRO Y POMPÓN (Grande) ---
-            // Base del gorro (rojo)
             drawRect(x, y - halfS + p * 2 + headYOffset, s * 0.9, s * 0.4, 'red'); 
-            // Pompón (blanco)
             drawCircle(x + s * 0.35, y - halfS + p + headYOffset, s * 0.15, 'white'); 
-            // Borde blanco
             drawRect(x, y - halfS + p * 5 + headYOffset, s, p * 2, 'white'); 
             
-            // -- 2. CARA Y BARBA (Grande y redonda) --
-            // Cara (piel)
             drawRect(x, y - s * 0.1 + headYOffset, s * 0.4, s * 0.2, '#FFDBAC'); 
-            // Ojos (Negros)
             drawRect(x - s * 0.1, y - s * 0.2 + headYOffset, p, p, 'black');
             drawRect(x + s * 0.1, y - s * 0.2 + headYOffset, p, p, 'black');
             
-            // Barba (Blanca, cubre gran parte del torso superior)
             drawRect(x, y + s * 0.2 + headYOffset, s * 1.2, s * 0.4, 'white'); 
             
-            // -- 3. CUERPO (Pequeño y Compacto) --
-            // Traje Rojo
             drawRect(x, y + s * 0.6 + bodyYOffset + bodyOffset, s * 0.8, s * 0.35, 'red');
-            // Cinturón Negro
             drawRect(x, y + s * 0.6 + bodyYOffset + bodyOffset, s * 0.8, s * 0.1, 'black');
-            // Hebilla Dorada
             drawRect(x, y + s * 0.6 + bodyYOffset + bodyOffset, s * 0.2, s * 0.15, '#FFD700'); 
 
-            // -- 4. PIERNAS Y BOTAS (Muy Pequeñas) --
-            // Piernas (Negras)
             drawRect(x - s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black'); 
             drawRect(x + s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black'); 
         }
 
+        // NUEVO: Dibuja los personajes y el árbol para la portada
+        function drawTitleCharacters() {
+            ctx.clearRect(0, 0, W, H);
+            
+            // 1. Configurar posiciones de los personajes en el centro del canvas (mitad vertical)
+            const TREE_SIZE = 80; 
+            const CHARACTER_SIZE = 50; 
+            const OFFSET = 200; 
+            const CENTER_Y = H * 0.55; // Ajuste ligeramente hacia abajo para equilibrar el título y las instrucciones
+
+            tree.x = W / 2;
+            tree.y = CENTER_Y;
+            tree.size = TREE_SIZE; 
+            drawTree(); 
+            tree.size = 40; 
+            
+            // 2. Dibujar Santa a la derecha del árbol
+            const santaX = W / 2 + OFFSET; 
+            const santaY = CENTER_Y - 50; 
+            drawSanta(santaX, santaY, CHARACTER_SIZE, gameFrame / 5); 
+
+            // 3. Dibujar un enemigo a la izquierda del árbol (tipo más común)
+            const enemyX = W / 2 - OFFSET; 
+            const enemyY = CENTER_Y - 50; 
+            
+            // Renderizar Enemigo (basado en lógica drawEnemies)
+            const e = { 
+                x: enemyX, 
+                y: enemyY, 
+                size: CHARACTER_SIZE, 
+                color: ENEMY_TYPES[0].color, 
+                walkFrame: gameFrame / 15 
+            };
+
+            const s = e.size; 
+            const color = e.color; 
+            const halfS = s / 2;
+            
+            drawShadow(e.x, e.y + halfS + 4, s * 1.2, s * 0.8);
+
+            const walkFrame = Math.floor(e.walkFrame % 3);
+            let legOffsetL = 0;
+            let legOffsetR = 0;
+            let bodyTilt = 0;
+
+            if (walkFrame === 0) { 
+                legOffsetL = s * 0.15;
+                legOffsetR = -s * 0.15;
+                bodyTilt = -s * 0.05;
+            } else if (walkFrame === 1) { 
+                legOffsetL = 0;
+                legOffsetR = 0;
+                bodyTilt = 0;
+            } else if (walkFrame === 2) { 
+                legOffsetL = -s * 0.15;
+                legOffsetR = s * 0.15;
+                bodyTilt = s * 0.05;
+            }
+
+            let suitColor = color;
+            if (color === '#666666') suitColor = '#444444'; 
+            
+            const headY = e.y - halfS + bodyTilt; 
+            const hairColor = '#333333'; 
+            const skinColor = '#39ff14'; 
+            const beardColor = '#39ff14'; 
+            
+            drawRect(e.x, headY + s * 0.0, s * 0.8, s * 0.2, hairColor); 
+            drawRect(e.x, headY + s * 0.25, s * 0.6, s * 0.2, skinColor); 
+            drawRect(e.x, headY + s * 0.25, s * 0.7, s * 0.2, 'black'); 
+            drawRect(e.x, headY + s * 0.5, s * 0.8, s * 0.25, beardColor); 
+            
+            const bodyY = e.y + s * 0.45 + bodyTilt * 0.5;
+            drawRect(e.x, bodyY, s * 0.8, s * 0.4, suitColor);
+
+            drawRect(e.x, e.y + s * 0.25, s * 0.2, s * 0.1, 'white');
+            drawRect(e.x, e.y + s * 0.35, s * 0.1, s * 0.2, color); 
+            
+            const legY = e.y + s * 0.7;
+            drawRect(e.x - s * 0.15 + legOffsetL, legY, s * 0.2, s * 0.3, '#333333'); 
+            drawRect(e.x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333'); 
+        }
+
         function drawTitleText(x, y, message, fontSize, color, align = 'center') {
+            // Ya no se usa para el título principal, que ahora es HTML
             ctx.fillStyle = color;
             ctx.font = `${fontSize}px monospace`;
             ctx.textAlign = align;
+            
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 4;
+            ctx.shadowOffsetY = 4;
+            
             ctx.fillText(message, x, y);
+            
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.shadowColor = 'transparent';
         }
 
+        // --- FUNCIÓN MEJORADA: DIBUJA LA PANTALLA DE TÍTULO EN EL CANVAS ---
         function drawTitleScreen() {
-            ctx.fillStyle = '#003300';
-            ctx.fillRect(0, 0, W, H);
-
-            drawTitleText(W / 2, H / 2 - 150, "EL SANTA DEFENDER", 60, '#cc0000');
-            drawTitleText(W / 2, H / 2 - 80, "La Lucha Contra la Codicia", 24, 'white');
-            drawSanta(W / 4, H / 2 + 50, 40, 0); 
-            drawTitleText(W / 4, H / 2 + 100, "Santa", 20, 'white');
-            
-            const instructions = isMobile ? 
-                ["**MOVIL**:", "Joystick Izq: Mover", "Botón FUEGO: Disparar", "Toca la pantalla para JUGAR"] :
-                ["**PC**:", "WASD / Flechas: Mover", "Espacio / Click: Disparar", "TAB: Silenciar Audio", "Click en la pantalla para JUGAR"];
-            
-            let lineY = H / 2 - 50;
-            const lineX = W * 0.6;
-
-            instructions.forEach(line => {
-                const color = line.startsWith('**') ? '#ffcc00' : 'white';
-                const text = line.replace(/\*\*/g, '');
-                drawTitleText(lineX, lineY, text, 20, color, 'left'); 
-                lineY += 30;
-            });
-
-            drawTitleText(W / 2, H - 50, "¡La Navidad depende de ti!", 24, '#00aa00');
+             drawTitleCharacters();
         }
 
-        function applyPsychedelicGlitch() {
-            ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2); 
-            if (Math.random() < 0.5) {
-                ctx.globalAlpha = 0.8;
-                ctx.filter = `hue-rotate(${Math.random() * 360}deg) saturate(200%)`;
-            } else {
-                 ctx.filter = 'none';
-                 ctx.globalAlpha = 1;
-            }
-        }
         
         function drawGameObjects() {
-            // Aplicar Glitch de Invencibilidad a todo el fondo
-            if (santa.invincibleTimer > 0) {
-                applyPsychedelicGlitch();
-            } else {
-                ctx.filter = 'none';
-                ctx.globalAlpha = 1;
-            }
+            // Limpiar fondo (el canvas tiene un fondo semi-transparente CSS ahora)
+            ctx.clearRect(0, 0, W, H); 
             
-            // Texto de fondo
-            const titleText = "EL SANTA DEFENDER";
-            const fontSize = 48; 
-            const titleColor = '#004d00'; 
-            ctx.fillStyle = titleColor;
-            ctx.font = `${fontSize}px monospace`;
-            ctx.textAlign = 'center';
-            const titleY = H / 2 + fontSize * 1.5;
-            ctx.fillText(titleText, W / 2 + 2, titleY + 2);
-            ctx.fillText(titleText, W / 2 - 2, titleY - 2);
-            ctx.fillText(titleText, W / 2, titleY);
-
+            ctx.filter = 'none';
+            ctx.globalAlpha = 1;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            
             drawTree();
-            
-            // Reestablecer el contexto después del árbol (que tiene un reset interno)
-            if (santa.invincibleTimer > 0) {
-                 ctx.filter = 'none';
-                 ctx.globalAlpha = 1;
-                 ctx.setTransform(1, 0, 0, 1, 0, 0); 
-                 applyPsychedelicGlitch(); // Reaplicar glitch para enemigos y balas
-            }
-
             drawEnemies();
             drawBullets();
             drawSanta(santa.x, santa.y, santa.size, santa.frame); 
             explosions.forEach(exp => exp.draw());
             
-            // DIBUJA LOS TEXTOS FLOTANTES
             floatingTexts.forEach(t => t.draw());
 
-            // Restablecer el contexto para evitar que el HUD se vea afectado por el glitch
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
@@ -1106,97 +1377,72 @@
         
         function drawTree() {
             const healthRatio = tree.health / tree.maxHealth;
-            const treeTop = tree.y - tree.size;
-            const treeBaseY = tree.y + tree.size / 2;
-            const treeW = tree.size;
+            const treeBaseW = tree.size * 2;
+            const baseCenterY = tree.y + tree.size / 2;
             
-            // --- APLICAR EFECTO GLITCH DE DAÑO ---
-            if (tree.damageGlitchTimer > 0) {
-                // Reducir el timer
-                tree.damageGlitchTimer--;
-                
-                // 1. Desplazamiento de pantalla (vibración)
-                const intensity = tree.damageGlitchTimer / GLITCH_DURATION;
-                const offsetX = Math.random() * 8 * intensity - 4 * intensity; // -4 a 4
-                const offsetY = Math.random() * 8 * intensity - 4 * intensity; 
-                
-                ctx.translate(offsetX, offsetY); 
-                
-                // 2. Filtro de color (rojo/glitch)
-                ctx.filter = `hue-rotate(${Math.random() * 30}deg) saturate(300%) contrast(150%)`;
-            }
-            // ---------------------------------------------
+            drawShadow(tree.x, baseCenterY + 15, treeBaseW * 1.4, treeBaseW * 0.8);
             
-            // --- 1. Aura Iridiscente Pulsante (Basado en el HP) ---
-            const hue = (gameFrame * 2) % 360; 
-            const auraColor = hueToRgb(hue);
-            
-            const baseGlow = 10;
-            const glowPulse = Math.sin(gameFrame * 0.1) * 3; 
-            const glowSize = Math.max(0, baseGlow * healthRatio + glowPulse);
-            
-            if (healthRatio < 0.2) {
-                ctx.shadowColor = `rgba(255, 0, 0, 1)`;
-                ctx.shadowBlur = baseGlow * 1.2;
-            } else {
-                ctx.shadowColor = auraColor;
-                ctx.shadowBlur = Math.max(5, glowSize);
-            }
-            
-            const auraOffset = Math.max(5, baseGlow * healthRatio * 0.5); 
-
-            // --- 2. Dibujar la Forma del Aura ---
-            ctx.fillStyle = `rgba(255, 255, 255, ${healthRatio * 0.2 + 0.1})`; 
-            ctx.beginPath();
-            ctx.moveTo(tree.x, treeTop - auraOffset); 
-            ctx.lineTo(tree.x - treeW - auraOffset, treeBaseY + auraOffset);
-            ctx.lineTo(tree.x + treeW + auraOffset, treeBaseY + auraOffset);
-            ctx.closePath();
-            ctx.fill();
-
-            // --- 3. Glow de Curación (Se superpone al iridiscente) ---
-            if (tree.healingGlowTimer > 0) {
-                const glowRatio = tree.healingGlowTimer / GLOW_DURATION;
-                const glowAlpha = Math.sin(Math.PI * (1 - glowRatio)); 
-                
-                ctx.shadowColor = `rgba(0, 255, 0, 1)`; 
-                ctx.shadowBlur = 25 * glowAlpha; 
-                
-                ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha * 0.5})`; 
-                ctx.beginPath();
-                ctx.moveTo(tree.x, treeTop - auraOffset); 
-                ctx.lineTo(tree.x - treeW - auraOffset, treeBaseY + auraOffset);
-                ctx.lineTo(tree.x + treeW + auraOffset, treeBaseY + auraOffset);
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            // --- 4. Reiniciar el contexto (Sombra/Filtro) ---
             ctx.shadowBlur = 0;
             ctx.shadowColor = 'transparent';
+
+
+            const SECTION_HEIGHT_FACTOR = 0.7; 
+            const SECTION_GAP_FACTOR = 0.4; 
             
-            // --- 5. Tronco ---
-            drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
+            const baseH = treeBaseW * SECTION_HEIGHT_FACTOR;
+            const h1 = baseH * 1.0;
+            const h2 = baseH * 0.8;
+            const h3 = baseH * 0.6;
             
-            // --- 6. Cuerpo del Árbol ---
-            ctx.fillStyle = tree.color;
-            ctx.beginPath();
-            ctx.moveTo(tree.x, treeTop); 
-            ctx.lineTo(tree.x - treeW, treeBaseY);
-            ctx.lineTo(tree.x + treeW, treeBaseY);
-            ctx.closePath();
-            ctx.fill();
+            const totalTreeHeight = h1 + h2 * SECTION_GAP_FACTOR + h3 * SECTION_GAP_FACTOR + tree.size * 0.25;
+            const treeTopY = tree.y - totalTreeHeight / 2; 
+
+            const Y_TOP_BASE = treeTopY; 
             
-            // --- 7. Luces Animadas ---
+            const SECTIONS_CONFIG = [
+                { factor: 0.6, height: h3, yCenter: Y_TOP_BASE + h3 / 2 }, 
+                { factor: 0.8, height: h2, yCenter: Y_TOP_BASE + h3 + h2 / 2 - (h2 * SECTION_GAP_FACTOR) },
+                { factor: 1.0, height: h1, yCenter: Y_TOP_BASE + h3 + h2 - (h2 * SECTION_GAP_FACTOR * 2) + h1 * 0.1 }
+            ];
+            
+            const ORNAMENTS = [
+                { x: -10, y: SECTIONS_CONFIG[2].yCenter + 15, color: 'yellow' }, { x: 15, y: SECTIONS_CONFIG[2].yCenter + 30, color: 'red' }, 
+                { x: -8, y: SECTIONS_CONFIG[1].yCenter + 0, color: 'blue' }, { x: 10, y: SECTIONS_CONFIG[1].yCenter - 10, color: 'magenta' }, 
+                { x: -5, y: SECTIONS_CONFIG[0].yCenter - 5, color: 'cyan' }, { x: 5, y: SECTIONS_CONFIG[0].yCenter - 15, color: 'yellow' } 
+            ];
+            
+            const trunkY = SECTIONS_CONFIG[2].yCenter + h1 / 2 + tree.size * 0.1;
+            drawRect(tree.x, trunkY, tree.size * 0.2, tree.size * 0.3, '#8B4513');
+
+            SECTIONS_CONFIG.forEach((sec) => {
+                const w = treeBaseW * sec.factor;
+                const h = sec.height;
+                const topY = sec.yCenter - h / 2;
+                const bottomY = sec.yCenter + h / 2;
+
+                ctx.fillStyle = tree.color;
+                
+                ctx.beginPath();
+                ctx.moveTo(tree.x, topY); 
+                ctx.lineTo(tree.x - w * 0.5, bottomY);
+                ctx.lineTo(tree.x + w * 0.5, bottomY);
+                ctx.closePath();
+                ctx.fill();
+            });
+
             const pulse = Math.floor(gameFrame / 10) % 3; 
-            const colors = ['yellow', 'red', 'blue'];
+            const lightColors = ['yellow', 'red', 'blue'];
             
-            drawCircle(tree.x - 10, tree.y - 15, 3, colors[(pulse + 0) % 3]);
-            drawCircle(tree.x + 15, tree.y, 3, colors[(pulse + 1) % 3]);
-            drawCircle(tree.x - 5, tree.y + 10, 3, colors[(pulse + 2) % 3]);
+            ORNAMENTS.forEach((ornament, index) => {
+                drawCircle(tree.x + ornament.x, ornament.y, tree.size * 0.075, ornament.color);
+            });
             
-            // --- 8. Reiniciar la transformación ---
-            // Esto es CRÍTICO para que solo el árbol se vea afectado.
+            drawCircle(tree.x - tree.size * 0.3, SECTIONS_CONFIG[2].yCenter + 0, tree.size * 0.1, lightColors[(pulse + 0) % 3]);
+            drawCircle(tree.x + tree.size * 0.25, SECTIONS_CONFIG[1].yCenter - 20, tree.size * 0.1, lightColors[(pulse + 1) % 3]);
+            drawCircle(tree.x + 0, SECTIONS_CONFIG[2].yCenter + tree.size * 0.5, tree.size * 0.1, lightColors[(pulse + 2) % 3]);
+
+            drawRect(tree.x, SECTIONS_CONFIG[0].yCenter - h3 * 0.5 - tree.size * 0.2, tree.size * 0.25, tree.size * 0.25, 'yellow');
+            
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.filter = 'none';
         }
@@ -1206,52 +1452,56 @@
                 const x = e.x;
                 const y = e.y;
                 
-                // Animación de Movimiento/Pulsación (tamaño variable)
                 const pulse = 1 + Math.sin(gameFrame * 0.1 * e.speed) * 0.05; 
-                // ENEMY_BASE_SIZE es 18 (Tamaño intermedio)
                 const s = ENEMY_BASE_SIZE * pulse; 
                 const color = e.color; 
                 const halfS = s / 2;
                 
-                // Color del traje
+                drawShadow(x, y + halfS + 4, s * 1.2, s * 0.8);
+
+                const walkFrame = Math.floor(e.walkFrame);
+                let legOffsetL = 0;
+                let legOffsetR = 0;
+                let bodyTilt = 0;
+
+                if (walkFrame === 0) { 
+                    legOffsetL = s * 0.15;
+                    legOffsetR = -s * 0.15;
+                    bodyTilt = -s * 0.05;
+                } else if (walkFrame === 1) { 
+                    legOffsetL = 0;
+                    legOffsetR = 0;
+                    bodyTilt = 0;
+                } else if (walkFrame === 2) { 
+                    legOffsetL = -s * 0.15;
+                    legOffsetR = s * 0.15;
+                    bodyTilt = s * 0.05;
+                }
+
                 let suitColor = color;
                 if (color === '#666666') suitColor = '#444444'; 
                 else if (color === '#990000') suitColor = '#660000'; 
                 else if (color === '#000066') suitColor = '#000044'; 
 
-                // --- 1. CABEZA CABEZONA CON DETALLES (Pelo, Gafas y Barba Zombi) ---
-                const hairColor = '#333333'; // Pelo negro
-                const skinColor = '#B0E0E6'; // Tono de piel: AZUL PÁLIDO (Zombie)
+                const headY = y - halfS + bodyTilt; 
+                const hairColor = '#333333'; 
+                const skinColor = '#39ff14'; 
+                const beardColor = '#39ff14'; 
                 
-                // 1.1. Pelo (Rectángulo superior, aumentado de ancho)
-                drawRect(x, y - halfS + s * 0.0, s * 0.8, s * 0.2, hairColor); 
-
-                // 1.2. Cara (Parte visible de la frente y mejillas, CENTRADO MÁS ABAJO)
-                // Usamos un tamaño más grande para la cara para el efecto cabezón.
-                drawRect(x, y - halfS + s * 0.25, s * 0.6, s * 0.2, skinColor); 
-
-                // 1.3. Gafas Oscuras (Rectángulo negro que cubre los ojos/nariz)
-                drawRect(x, y - halfS + s * 0.25, s * 0.7, s * 0.2, 'black'); 
+                drawRect(x, headY + s * 0.0, s * 0.8, s * 0.2, hairColor); 
+                drawRect(x, headY + s * 0.25, s * 0.6, s * 0.2, skinColor); 
+                drawRect(x, headY + s * 0.25, s * 0.7, s * 0.2, 'black'); 
+                drawRect(x, headY + s * 0.5, s * 0.8, s * 0.25, beardColor); 
                 
-                // 1.4. Barba (Aumentada y más baja)
-                drawRect(x, y - halfS + s * 0.5, s * 0.8, s * 0.25, '#666666'); 
-                
+                const bodyY = y + s * 0.45 + bodyTilt * 0.5;
+                drawRect(x, bodyY, s * 0.8, s * 0.4, suitColor);
 
-                // --- 2. CUERPO / TACUCHE (El cuerpo debe verse pequeño en comparación) ---
-                // Traje principal (Comienza más abajo, en y + s * 0.45)
-                drawRect(x, y + s * 0.45, s * 0.8, s * 0.4, suitColor);
-
-                // Cuello de la camisa (Blanco, reubicado)
                 drawRect(x, y + s * 0.25, s * 0.2, s * 0.1, 'white');
-
-                // Corbata (Color base del enemigo, reubicada)
                 drawRect(x, y + s * 0.35, s * 0.1, s * 0.2, color); 
                 
-                // --- 3. PIERNAS Y ZAPATOS ---
-                // Reubicadas para que estén debajo del nuevo cuerpo
                 const legY = y + s * 0.7;
-                drawRect(x - s * 0.15, legY, s * 0.2, s * 0.3, '#333333'); 
-                drawRect(x + s * 0.15, legY, s * 0.2, s * 0.3, '#333333'); 
+                drawRect(x - s * 0.15 + legOffsetL, legY, s * 0.2, s * 0.3, '#333333'); 
+                drawRect(x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333'); 
             });
         }
 
@@ -1326,7 +1576,6 @@
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             
-            // --- BARRA DE SALUD DEL ÁRBOL ---
             const treeHealthRatio = tree.health / tree.maxHealth;
             const barWidth = 300;
             const barHeight = 15;
@@ -1349,7 +1598,6 @@
             ctx.textAlign = 'center';
             ctx.fillText(`ÁRBOL: ${tree.health}/${tree.maxHealth}`, W / 2, barY + barHeight + 20);
 
-            // --- BARRA DE SALUD DE SANTA ---
             const santaHealthRatio = santa.health / santa.maxHealth;
             const santaBarWidth = 150;
             const santaBarHeight = 15;
@@ -1367,45 +1615,35 @@
             ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
             
             
-            // --- NUEVA: BARRA DE POWER-UP ---
             const powerUpRatio = Math.min(1, enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
             const powerBarWidth = 300;
             const powerBarHeight = 15;
             const powerBarX = W / 2 - powerBarWidth / 2;
-            const powerBarY = H - 30; // Posicionada en la parte inferior
+            const powerBarY = H - 30; 
 
-            // 1. Efecto Glitch Frenético (Parpadeo y Desplazamiento)
             let glitchOffset = 0;
-            let barColor = '#FF00FF'; // Color base (Púrpura/Magia)
+            let barColor = '#FF00FF'; 
 
             if (powerUpRatio === 1) {
-                // Si la barra está llena, aplicamos el glitch visual
-                glitchOffset = Math.random() * 6 - 3; // Desplazamiento horizontal aleatorio
-                barColor = (Math.floor(gameFrame / 5) % 2 === 0) ? '#00FFFF' : '#FF00FF'; // Parpadeo cian/magenta
-
-                // Aplicar filtro de color intenso al contexto *solo* para esta barra
-                ctx.filter = `saturate(300%) hue-rotate(${Math.random() * 360}deg)`;
+                glitchOffset = 0; 
+                barColor = (Math.floor(gameFrame / 5) % 2 === 0) ? '#00FFFF' : '#FF00FF'; 
+                ctx.filter = 'none'; 
             } else {
                 ctx.filter = 'none';
             }
 
-            // Dibujar el Contorno de la Barra (con o sin glitch offset)
             ctx.strokeStyle = barColor;
             ctx.strokeRect(powerBarX + glitchOffset, powerBarY, powerBarWidth, powerBarHeight);
 
-            // Dibujar la barra de progreso
             ctx.fillStyle = barColor;
             ctx.fillRect(powerBarX + glitchOffset, powerBarY, powerBarWidth * powerUpRatio, powerBarHeight);
 
-            // Reiniciar el filtro después de dibujar la barra
             ctx.filter = 'none';
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.fillText(`POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`, W / 2, powerBarY - 10);
-            // ---------------------------------
             
-            // Diálogo (esto ya estaba y va al final)
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
@@ -1419,10 +1657,9 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            ctx.clearRect(0, 0, W, H);
             
             if (gameState === 'TITLE') {
-                drawTitleScreen();
+                drawTitleCharacters(); 
             } else if (gameState === 'PLAYING') {
                 updateGame(deltaTime); 
                 drawGameObjects();
