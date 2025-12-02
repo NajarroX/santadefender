@@ -13,18 +13,15 @@
         body {
             margin: 0;
             padding: 0;
-            /* Fondo: Verde vibrante */
             background-color: #006600; 
-            overflow: hidden; /* **CLAVE: Evita el scroll** */
-            
-            /* Contenedor principal para centrar el juego */
+            overflow: hidden; 
             display: flex; 
             flex-direction: column;
             justify-content: center; 
             align-items: center;
-            height: 100vh; /* **CLAVE: Llenar el alto del viewport** */
+            height: 100vh; 
             font-family: 'Press Start 2P', monospace;
-            position: relative; /* CLAVE: Referencia para los controles ABSOLUTOS */
+            position: relative; 
         }
 
         /* --- PATRÓN DE FONDO ANIMADO --- */
@@ -53,34 +50,55 @@
             background-size: 150px 150px, 150px 150px;
             animation: movePattern 20s linear infinite; 
         }
+        
+        .background-pattern.paused {
+            animation-play-state: paused;
+        }
 
         @keyframes movePattern {
             from { background-position: 0 0, 0 0; }
             to { background-position: 150px 150px, 150px 150px; }
         }
+        
+        /* --- TÍTULO PRINCIPAL (AHORA FIJO AL TOP) --- */
+        #mainTitle {
+            font-family: 'Bungee Inline', sans-serif;
+            color: white;
+            text-align: center;
+            line-height: 0.8;
+            z-index: 30; 
+            text-shadow: 
+                -5px -5px 0 #000, 5px -5px 0 #000, -5px 5px 0 #000, 5px 5px 0 #000,
+                0 0 10px #FF0000;
+            
+            /* CLAVE: Posición fija y centrada en el viewport */
+            position: fixed; 
+            top: 5%; 
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0; 
+            font-size: 80px; 
+        }
 
-        /* Contenedor principal que centra el canvas y el overlay */
+        /* Contenedor principal que centra el canvas */
         #gameContainer {
             position: relative;
             z-index: 10; 
             border: 4px solid #cc0000;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            /* Reglas Responsive: Ahora se ajusta al 98% del viewport */
-            width: 800px; /* Tamaño base */
-            height: 600px; /* Tamaño base */
-            max-width: 98vw; 
-            max-height: 98vh; /* **CLAVE: Maximizando el área visible** */
             
-            /* Para centrar el contenido (botón/instrucciones/título) */
+            width: 800px; 
+            height: 600px; 
+            max-width: 98vw; 
+            max-height: 98vh; 
+            
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
         /* Estilo del Canvas Base */
         #gameCanvas {
-            /* NUEVO: Fondo verde 85% opaco para que se vea el patrón pero sin demasiada distracción */
             background-color: rgba(0, 102, 0, 0.85); 
             touch-action: none; 
             cursor: pointer; 
@@ -89,43 +107,30 @@
             height: 100%;
         }
         
-        /* --- TÍTULO PRINCIPAL (Ahora DENTRO del gameContainer) --- */
-        #mainTitle {
-            font-family: 'Bungee Inline', sans-serif;
-            font-size: 80px;
-            color: white;
-            text-align: center;
-            line-height: 0.8;
-            z-index: 20; /* Encima de todo */
-            text-shadow: 
-                -5px -5px 0 #000, 5px -5px 0 #000, -5px 5px 0 #000, 5px 5px 0 #000,
-                0 0 10px #FF0000;
-            
-            /* NUEVO: Ajustes de posicionamiento dentro del contenedor de elementos */
-            margin: 10px 0; 
-        }
-        
-        /* --- Contenedor de elementos HTML de la Portada (sobre el Canvas) --- */
+        /* --- Contenedor de elementos HTML de la Portada (FIJO EN EL VIEWPORT) --- */
         .title-elements-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            /* CLAVE: Posición fija que cubre 100% del viewport */
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
             z-index: 20; 
+            
             display: flex;
             flex-direction: column;
-            /* CLAVE: Distribuye el espacio entre los 3 grupos: Título, Personajes (Canvas), Botón/Instrucciones */
             justify-content: space-between; 
             align-items: center;
             pointer-events: none; 
-            padding-bottom: 20px; /* Espacio extra abajo */
-            padding-top: 10px;
+            
+            /* AJUSTE CLAVE: Padding superior, sin padding inferior para usar margin-bottom en #controlArea */
+            padding: 5vh 0 0; 
         }
         
-        /* CLAVE: Este div ocupa el espacio entre el Título y el área de Control/Instrucciones */
+        /* Espaciador */
         #characterAreaSpacer {
-            flex-grow: 1; /* Por defecto ocupa el mayor espacio disponible */
+            flex-grow: 1; 
+            width: 100%; 
         }
         
         /* Contenedor para el Botón y las Instrucciones */
@@ -135,10 +140,11 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            margin-top: 10px;
+            /* CLAVE: Margen inferior para separarlo del borde del viewport */
+            margin-bottom: 50px; 
         }
 
-        /* --- Estilos del Botón de Inicio (Dentro del Canvas) --- */
+        /* --- Estilos del Botón de Inicio --- */
         #startButton {
             pointer-events: auto; 
             padding: 15px 30px;
@@ -146,22 +152,25 @@
             font-weight: bold;
             color: #FFFF00; 
             background-color: #CC0000; 
-            border: 5px solid #00FFFF; 
-            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5), 0 0 10px rgba(204, 0, 0, 0.7);
+            border: 5px solid #000; 
+            box-shadow: 0 5px 0 #FF3333, 0 8px 0 #990000; 
             cursor: pointer;
             text-align: center;
-            margin-bottom: 10px; 
+            /* margin-bottom: 10px; se elimina de aquí y se va a #controlArea */
+            margin-bottom: 15px; /* Mantiene la distancia con la caja de instrucciones */
             line-height: 1;
             user-select: none;
             font-family: 'Press Start 2P', monospace;
             z-index: 20;
+            transition: all 0.1s ease;
+        }
+        
+        #startButton:active {
+            box-shadow: 0 2px 0 #FF3333, 0 5px 0 #990000;
+            transform: translateY(3px);
         }
 
-        #startButton:hover {
-            background-color: #ff3333;
-        }
-
-        /* --- Bloque de Instrucciones (Dentro del Canvas) --- */
+        /* --- Bloque de Instrucciones --- */
         #instructions {
             pointer-events: auto; 
             position: static; 
@@ -175,7 +184,7 @@
             font-size: 14px;
             line-height: 1.5;
             text-align: center;
-            margin-bottom: 10px; /* Menos margen, va dentro de #controlArea */
+            margin-bottom: 15px; /* Margen para separarlo del botón de inicio */
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
         }
         
@@ -196,15 +205,29 @@
         /* --- RESPONSIVE GENERAL --- */
         @media (max-width: 800px) {
              #mainTitle {
-                font-size: 40px;
+                font-size: 40px; 
+                top: 20px; 
                 text-shadow: 
                     -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000,
                     0 0 8px #FF0000;
              }
+             
+             .title-elements-container {
+                /* Ajuste del padding superior en móvil */
+                padding: 2vh 0 0; 
+             }
+             
+             #controlArea {
+                /* CLAVE: Espacio de 20px de la orilla inferior en móvil */
+                margin-bottom: 20px; 
+             }
+
              #startButton {
                 font-size: 20px;
                 padding: 10px 20px;
+                box-shadow: 0 4px 0 #FF3333, 0 6px 0 #990000;
              }
+             
              #instructions {
                 font-size: 10px;
                 max-width: 90%;
@@ -217,39 +240,34 @@
         /* --- CLAVE: AJUSTES ESPECÍFICOS PARA MÓVIL VERTICAL (pantallas muy estrechas/altas) --- */
         @media (max-width: 600px) and (max-height: 800px) {
             
-             .title-elements-container {
-                padding-bottom: 10px; /* Reducir padding vertical */
-                padding-top: 5px;
+             #mainTitle {
+                font-size: 32px; 
+                top: 10px;
              }
 
-             #mainTitle {
-                font-size: 32px; /* Reducir más el título */
-                margin: 5px 0;
+             .title-elements-container {
+                padding: 1vh 0 0; 
              }
              
-             /* CLAVE: Reducir el crecimiento del espacio intermedio para que las instrucciones suban */
-             #characterAreaSpacer {
-                flex-grow: 0.5; 
+             #controlArea {
+                 margin-bottom: 10px; /* Margen muy pequeño en dispositivos muy pequeños */
              }
              
              #instructions {
-                padding: 5px; /* Reducir padding interno de instrucciones */
+                padding: 5px; 
                 font-size: 9px;
              }
              #instructions h3 {
                  font-size: 12px;
              }
-             #startButton {
-                 margin-bottom: 5px; /* Reducir margen inferior del botón */
-             }
         }
         
-        /* --- Control de Audio y Controles Táctiles --- */
+        /* --- Control de Audio y Controles Táctiles (Se mantienen) --- */
         #audioToggle {
-            position: absolute;
+            position: fixed; 
             top: 10px;
             left: 10px;
-            z-index: 20;
+            z-index: 40; 
             background: rgba(0, 0, 0, 0.7);
             color: white;
             border: 2px solid #cc0000;
@@ -262,13 +280,12 @@
             pointer-events: auto;
         }
 
-        /* Controles Táctiles (Joystick) - Referenciados al BODY (position: relative) */
         .controls {
-            position: absolute;
+            position: fixed; 
             bottom: 20px;
             left: 20px;
-            z-index: 20;
-            display: none; /* Oculto por defecto */
+            z-index: 40;
+            display: none; 
             pointer-events: auto;
         }
 
@@ -292,7 +309,7 @@
         }
 
         .action-button {
-            position: absolute;
+            position: fixed; 
             bottom: 50px;
             right: 50px;
             width: 80px;
@@ -309,32 +326,32 @@
             user-select: none;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             pointer-events: auto;
-            display: none; /* Oculto por defecto */
-            z-index: 20;
+            display: none; 
+            z-index: 40;
         }
     </style>
 </head>
 <body>
-    <div class="background-pattern"></div>
+    <div class="background-pattern" id="backgroundPattern"></div>
     
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <h1 id="mainTitle">EL SANTA<br>DEFENDER</h1>
+    
+    <div class="title-elements-container" id="titleElementsContainer">
         
-        <div class="title-elements-container" id="titleElementsContainer">
-            
-            <h1 id="mainTitle">EL SANTA DEFENDER</h1>
-
-            <div id="characterAreaSpacer">
+        <div id="characterAreaSpacer">
+        </div>
+        
+        <div id="controlArea">
+            <div id="instructions">
                 </div>
-            
-            <div id="controlArea">
-                <div id="instructions">
-                    </div>
-                <div id="startButton">
-                    INICIAR TRANSMISIÓN
-                </div>
+            <div id="startButton">
+                ¡A DEFENDER!
             </div>
         </div>
+    </div>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
     
     <button id="audioToggle">🔊</button>
@@ -355,7 +372,6 @@
         const BASE_H = 600;
         let W = BASE_W; 
         let H = BASE_H;
-        // La detección móvil es la misma, confiable
         const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         // Estados del Juego
@@ -367,6 +383,7 @@
         const instructionsDiv = document.getElementById('instructions');
         const gameContainer = document.getElementById('gameContainer');
         const titleElementsContainer = document.getElementById('titleElementsContainer'); 
+        const backgroundPattern = document.getElementById('backgroundPattern'); 
         
         // Referencias a los controles y el botón de audio
         const controls = document.getElementById('mobileControls');
@@ -375,7 +392,7 @@
         const joystickHandle = document.getElementById('joystickHandle');
         const audioToggle = document.getElementById('audioToggle');
 
-        // Constantes del juego (se mantienen las mismas)
+        // Constantes del juego (se mantienen)
         const PLAYER_SPEED = 4;
         const BULLET_SPEED = 8;
         const JOYSTICK_RADIUS = 75; 
@@ -383,59 +400,29 @@
         const PHRASE_INTERVAL = 8000; 
         const HIT_DURATION = 10; 
         const GLITCH_DURATION = 15; 
-        
-        // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
         const POWERUP_DURATION = 300; 
         const INVINCIBILITY_PHRASE_DURATION = 90; 
         const INVINCIBILITY_PHRASE_CHANCE = 0.40; 
-        
-        // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
         const ENEMY_TYPES = [
             { speed: 1.5, color: '#666666', spawnWeight: 60 },
             { speed: 2.5, color: '#990000', spawnWeight: 30 },
             { speed: 1.0, color: '#000066', spawnWeight: 10 }
         ];
         let spawnRate = 0.02;
-
-        // --- HITO DE PUNTUACIÓN Y CURACIÓN ---
         const HEAL_SCORE_HIT = 1000;
         let lastHealScore = 0;
         const GLOW_DURATION = 30; 
-
-        // --- 2. OBJETOS DEL JUEGO Y ESTADO (se mantienen los mismos) ---
+        
+        // Objetos del juego (se mantienen)
         let santa = {
-            x: BASE_W / 2,
-            y: BASE_H / 2,
-            size: 20, 
-            color: 'red',
-            health: 10,
-            maxHealth: 10,
-            dirX: 0,
-            dirY: 0,
-            shooting: false,
-            lastShotTime: 0,
-            fireRate: 200,
-            frame: 0,
-            invincible: false, 
-            invincibleTimer: 0,
-            hitTimer: 0
+            x: BASE_W / 2, y: BASE_H / 2, size: 20, color: 'red', health: 10, maxHealth: 10, dirX: 0, dirY: 0, shooting: false, lastShotTime: 0, fireRate: 200, frame: 0, invincible: false, invincibleTimer: 0, hitTimer: 0
         };
-
         const ENEMY_BASE_SIZE = 18; 
-
         let tree = {
-            x: BASE_W / 2,
-            y: BASE_H / 2,
-            size: 40,
-            color: '#00aa00', 
-            health: 50,
-            maxHealth: 50,
-            healingGlowTimer: 0, 
-            damageGlitchTimer: 0 
+            x: BASE_W / 2, y: BASE_H / 2, size: 40, color: '#00aa00', health: 50, maxHealth: 50, healingGlowTimer: 0, damageGlitchTimer: 0 
         };
         const treeHealthMax = tree.maxHealth;
-
         let bullets = [];
         let enemies = [];
         let explosions = []; 
@@ -444,55 +431,34 @@
         let enemiesDefeatedSincePowerUp = 0; 
         let powerUpTimer = 0; 
         let gameFrame = 0; 
-        
         let dialogue = {
             message: "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.",
-            duration: PHRASE_DURATION,
-            powerUpMessage: null 
+            duration: PHRASE_DURATION, powerUpMessage: null 
         };
-
         const invincibilityPhrases = [
-            "¡Fuera de aquí, parásitos capitalistas!",
-            "¡El capital no puede con la magia de un Santa sindicalizado!",
-            "¡El único regalo que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
+            "¡Fuera de aquí, parásitos capitalistas!", "¡El capital no puede con la magia de un Santa sindicalizado!", "¡El único regalo que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
         ];
-        
         const sarcasticPhrases = [
             { min: 40, phrases: [
-                "¡Luchando por el árbol, el único bien público que queda en pie!", 
-                "¡Mis elfos no tienen sindicato, son la verdadera tragedia aquí, no estos demonios!", 
-                "¡La avaricia ha creado monstruos... literalmente! ¡Que ironía!", 
-                "¡El precio de la hora extra es lo que realmente duele, no sus mordiscos!", 
-                "¡Defender este árbol es la nueva 'responsabilidad social corporativa'!"
+                "¡Luchando por el árbol, el único bien público que queda en pie!", "¡Mis elfos no tienen sindicato, son la verdadera tragedia aquí, no estos demonios!", "¡La avaricia ha creado monstruos... literalmente! ¡Que ironía!", "¡El precio de la hora extra es lo que realmente duele, no sus mordiscos!", "¡Defender este árbol es la nueva 'responsabilidad social corporativa'!"
             ] },
             { min: 25, phrases: [
-                "¿En serio? ¿Tantos enemigos y la riqueza sigue concentrada en los de arriba?", 
-                "¡Esto es lo que pasa cuando privatizas el Polo Norte!", 
-                "¡No hay suficientes incentivos fiscales para seguir con esta masacre!", 
-                "¡Al menos estos monstruos trabajan, a diferencia de los parásitos de la junta directiva!", 
-                "¡Mi nómina está congelada, pero mi furia no!"
+                "¿En serio? ¿Tantos enemigos y la riqueza sigue concentrada en los de arriba?", "¡Esto es lo que pasa cuando privatizas el Polo Norte!", "¡No hay suficientes incentivos fiscales para seguir con esta masacre!", "¡Al menos estos monstruos trabajan, a diferencia de los parásitos de la junta directiva!", "¡Mi nómina está congelada, pero mi furia no!"
             ] },
             { min: 1, phrases: [
-                "¡La recesión de salud llegó antes de lo esperado! ¡Sálvese quien pueda!", 
-                "¡Parece que el mercado se está 'ajustando' a la baja, justo como mi moral!", 
-                "¡Si perdemos, que el árbol se declare en bancarrota para salvar mis activos!", 
-                "¡La próxima Navidad, los juguetes serán hechos por la IA... y serán aún más caros!", 
-                "¡El verdadero regalo es un sistema que funcione, no más juguetes!"
+                "¡La recesión de salud llegó antes de lo esperado! ¡Sálvese quien pueda!", "¡Parece que el mercado se está 'ajustando' a la baja, justo como mi moral!", "¡Si perdemos, que el árbol se declare en bancarrota para salvar mis activos!", "¡La próxima Navidad, los juguetes serán hechos por la IA... y serán aún más caros!", "¡El verdadero regalo es un sistema que funcione, no más juguetes!"
             ] }
         ];
-
         let timeSinceLastPhrase = 0;
-
-        // --- WEB AUDIO API (Control y Generación de Sonido) ---
+        
+        // Audio (se mantiene)
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const masterGain = audioContext.createGain();
         masterGain.connect(audioContext.destination);
         let isMuted = false;
         let backgroundMusicSource = null; 
-
         const C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392.00, A4 = 440.00; 
         const tempo = 0.25; 
-
         const melody = [
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 }, 
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
@@ -512,8 +478,7 @@
             { freq: C4, duration: 2.0 } 
         ];
 
-
-        function startBackgroundMusic() {
+        function startBackgroundMusic() { /* ... (se mantiene) ... */
             if (backgroundMusicSource) {
                 if (backgroundMusicSource.playbackState === backgroundMusicSource.PLAYING_STATE) {
                     try { backgroundMusicSource.stop(audioContext.currentTime); } catch (e) {}
@@ -567,7 +532,7 @@
             playSequence(audioContext.currentTime);
         }
 
-        function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) {
+        function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) { /* ... (se mantiene) ... */
             if (isMuted) return;
 
             if (audioContext.state === 'suspended') {
@@ -594,15 +559,15 @@
             oscillator.stop(audioContext.currentTime + duration);
         }
 
-        function playExplosion(pitch) {
+        function playExplosion(pitch) { /* ... (se mantiene) ... */
             playSound(pitch, 0.1, 'triangle', pitch * 0.5, 0.6);
         }
 
-        function playHealSound() {
+        function playHealSound() { /* ... (se mantiene) ... */
             playSound(400, 0.15, 'sine', 800, 0.8); 
         }
 
-        function toggleAudio() {
+        function toggleAudio() { /* ... (se mantiene) ... */
             isMuted = !isMuted;
             if (isMuted) {
                 masterGain.gain.setValueAtTime(0, audioContext.currentTime);
@@ -633,7 +598,7 @@
         });
         
         // --- CLASE EXPLOSIÓN (Se mantiene) ---
-        class Explosion {
+        class Explosion { /* ... (se mantiene) ... */
             constructor(x, y, color) {
                 this.particles = [];
                 for (let i = 0; i < 10; i++) {
@@ -666,7 +631,7 @@
         }
 
         // --- CLASE PARA TEXTOS FLOTANTES (Se mantiene) ---
-        class FloatingText {
+        class FloatingText { /* ... (se mantiene) ... */
             constructor(x, y, text, color) {
                 this.x = x;
                 this.y = y;
@@ -709,21 +674,17 @@
             
             let newW, newH;
 
-            // La lógica ahora se basa en el tamaño máximo del contenedor (98vw x 98vh)
             const maxContainerW = viewportW * 0.98;
             const maxContainerH = viewportH * 0.98;
             
             if (maxContainerW / maxContainerH > aspectR) {
-                // Limitado por la altura
                 newH = maxContainerH;
                 newW = maxContainerH * aspectR;
             } else {
-                // Limitado por la anchura
                 newW = maxContainerW;
                 newH = maxContainerW / aspectR;
             }
             
-            // Ajustar el contenedor del juego
             gameContainer.style.width = newW + 'px';
             gameContainer.style.height = newH + 'px';
             
@@ -741,21 +702,22 @@
         
         function handleStartGame() {
             if (gameState === 'TITLE') {
-                // CLAVE: Reanudar el contexto de audio en una interacción del usuario
                 audioContext.resume();
-                
                 playSound(440, 0.01, 'sine', 440, 0); 
                 
                 gameState = 'PLAYING';
                 
-                // OCULTAR ELEMENTOS HTML DE LA PORTADA
+                // OCULTAR ELEMENTOS HTML DE LA PORTADA (usan fixed/absolute)
                 titleElementsContainer.style.display = 'none'; 
-
+                mainTitle.style.display = 'none'; 
+                
+                // CLAVE: Pausar la animación del fondo
+                backgroundPattern.classList.add('paused');
+                
                 resetGame();
                 
                 startBackgroundMusic(); 
 
-                // *** ESTO ASEGURA QUE SE MUESTREN SIEMPRE EN EL MÓVIL ***
                 if (isMobile) {
                     controls.style.display = 'block';
                     shootButton.style.display = 'flex';
@@ -773,7 +735,7 @@
 
 
         // --- Llenar las instrucciones de la portada ---
-        function fillInstructions() {
+        function fillInstructions() { /* ... (se mantiene) ... */
              const instructionsContent = isMobile ? 
                 `<h3>CONTROLES MÓVIL</h3>
                 <p><strong>Joystick:</strong> Mover a Santa</p>
@@ -787,11 +749,11 @@
             
             instructionsDiv.innerHTML = instructionsContent;
         }
-        fillInstructions(); // Llenar al cargar la página
+        fillInstructions(); 
         
         
         // --- Controles de juego (Joystick y Teclado) ---
-        let keys = {};
+        let keys = {}; /* ... (se mantiene) ... */
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
                 if (gameState === 'PLAYING') {
@@ -827,7 +789,6 @@
             joystickContainer.addEventListener('touchmove', (e) => {
                 if (!joystickActive || gameState !== 'PLAYING') return;
                 const touch = e.touches[0];
-                // Convertir coordenadas de pantalla a relativas al canvas para el joystick
                 const rect = joystickContainer.getBoundingClientRect();
                 const deltaX = (touch.clientX - rect.left - rect.width / 2);
                 const deltaY = (touch.clientY - rect.top - rect.height / 2);
@@ -867,9 +828,9 @@
         }
 
 
-        // --- 5. LÓGICA DEL JUEGO (UPDATE - Se mantiene igual) ---
+        // --- 5. LÓGICA DEL JUEGO (UPDATE - Se mantiene) ---
 
-        function handleShooting(deltaTime) {
+        function handleShooting(deltaTime) { /* ... (se mantiene) ... */
             const currentFireRate = (santa.invincibleTimer > 0) ? 50 : santa.fireRate;
             
             if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (santa.invincibleTimer > 0)) {
@@ -895,7 +856,7 @@
             }
         }
         
-        function updateBullets() {
+        function updateBullets() { /* ... (se mantiene) ... */
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
                 bullet.x += bullet.dirX * BULLET_SPEED;
@@ -926,7 +887,7 @@
             }
         }
         
-        function updatePowerUp(deltaTime) {
+        function updatePowerUp(deltaTime) { /* ... (se mantiene) ... */
             if (santa.invincibleTimer > 0) {
                 santa.invincibleTimer -= (deltaTime / (1000 / 60)); 
                 if (santa.invincibleTimer <= 0) {
@@ -950,7 +911,7 @@
             }
         }
 
-        function checkHealHit() {
+        function checkHealHit() { /* ... (se mantiene) ... */
             if (score >= lastHealScore + HEAL_SCORE_HIT) {
                 lastHealScore += HEAL_SCORE_HIT;
 
@@ -968,7 +929,7 @@
             }
         }
 
-        function updatePlayerMovement() {
+        function updatePlayerMovement() { /* ... (se mantiene) ... */
             const originalY = BASE_H / 2 + santa.y - (BASE_H / 2);
 
             if (!isMobile) {
@@ -1001,7 +962,7 @@
             santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
             santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
         }
-        function updateExplosions() {
+        function updateExplosions() { /* ... (se mantiene) ... */
              for (let i = explosions.length - 1; i >= 0; i--) {
                 if (!explosions[i].update()) {
                     explosions.splice(i, 1);
@@ -1009,7 +970,7 @@
             }
         }
         
-        function updateFloatingTexts() {
+        function updateFloatingTexts() { /* ... (se mantiene) ... */
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 if (!floatingTexts[i].update()) {
                     floatingTexts.splice(i, 1);
@@ -1017,7 +978,7 @@
             }
         }
 
-        function spawnEnemies() {
+        function spawnEnemies() { /* ... (se mantiene) ... */
             if (Math.random() < spawnRate) { 
                 
                 let totalWeight = ENEMY_TYPES.reduce((sum, type) => sum + type.spawnWeight, 0);
@@ -1053,7 +1014,7 @@
             }
         }
 
-        function updateEnemies() {
+        function updateEnemies() { /* ... (se mantiene) ... */
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 const dx = tree.x - enemy.x;
@@ -1084,7 +1045,11 @@
                             
                             // MOSTRAR ELEMENTOS HTML DE LA PORTADA
                             titleElementsContainer.style.display = 'flex'; 
-
+                            mainTitle.style.display = 'block'; 
+                            
+                            // CLAVE: Reanudar la animación del fondo
+                            backgroundPattern.classList.remove('paused');
+                            
                             if (isMobile) {
                                 controls.style.display = 'none';
                                 shootButton.style.display = 'none';
@@ -1119,6 +1084,10 @@
                         
                         // MOSTRAR ELEMENTOS HTML DE LA PORTADA
                         titleElementsContainer.style.display = 'flex'; 
+                        mainTitle.style.display = 'block'; 
+                        
+                        // CLAVE: Reanudar la animación del fondo
+                        backgroundPattern.classList.remove('paused');
                         
                         if (isMobile) {
                             controls.style.display = 'none';
@@ -1131,7 +1100,7 @@
             }
         }
         
-        function updateDialogue(deltaTime) {
+        function updateDialogue(deltaTime) { /* ... (se mantiene) ... */
             if (dialogue.duration > 0) {
                 dialogue.duration -= (deltaTime / (1000 / 60)); 
             }
@@ -1161,7 +1130,7 @@
                 }
             }
         }
-        function checkCollision(objA, objB) {
+        function checkCollision(objA, objB) { /* ... (se mantiene) ... */
              const sizeA = objA.size || 0; 
              const sizeB = objB.size || 0;
 
@@ -1174,7 +1143,7 @@
         }
 
 
-        function updateGame(deltaTime) {
+        function updateGame(deltaTime) { /* ... (se mantiene) ... */
             updatePlayerMovement();
             updatePowerUp(deltaTime); 
             handleShooting(deltaTime);
@@ -1190,25 +1159,25 @@
             if (tree.healingGlowTimer > 0) {
                 tree.healingGlowTimer--;
             }
-             if (tree.damageGlitchTimer > 0) { // Restaurar el filtro después del glitch
+             if (tree.damageGlitchTimer > 0) { 
                 tree.damageGlitchTimer--;
             }
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
 
-        function drawRect(x, y, w, h, color) {
+        function drawRect(x, y, w, h, color) { /* ... (se mantiene) ... */
             ctx.fillStyle = color;
             ctx.fillRect(x - w / 2, y - h / 2, w, h);
         }
-        function drawCircle(x, y, r, color) {
+        function drawCircle(x, y, r, color) { /* ... (se mantiene) ... */
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(x, y, r, 0, Math.PI * 2);
             ctx.fill();
         }
         
-        function drawShadow(x, y, width, height, opacity = 0.35) {
+        function drawShadow(x, y, width, height, opacity = 0.35) { /* ... (se mantiene) ... */
              ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
              ctx.beginPath();
              ctx.ellipse(x, y, width / 2, height * 0.4 / 2, 0, 0, Math.PI * 2);
@@ -1216,33 +1185,7 @@
         }
 
 
-        function hueToRgb(p) {
-            const h = (p % 360 + 360) % 360; 
-            const chroma = 255; 
-            const x = chroma * (1 - Math.abs((h / 60) % 2 - 1));
-            
-            let r = 0, g = 0, b = 0;
-
-            if (h >= 0 && h < 60) {
-                [r, g, b] = [chroma, x, 0];
-            } else if (h >= 60 && h < 120) {
-                [r, g, b] = [x, chroma, 0];
-            } else if (h >= 120 && h < 180) {
-                [r, g, b] = [0, chroma, x];
-            } else if (h >= 180 && h < 240) {
-                [r, g, b] = [0, x, chroma];
-            } else if (h >= 240 && h < 300) {
-                [r, g, b] = [x, 0, chroma];
-            } else if (h >= 300 && h < 360) {
-                [r, g, b] = [chroma, 0, x];
-            }
-            
-            const toHex = (c) => Math.round(c).toString(16).padStart(2, '0');
-            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-        }
-
-
-        function drawSanta(x, y, size, frame) {
+        function drawSanta(x, y, size, frame) { /* ... (se mantiene) ... */
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
                 return;
             }
@@ -1284,34 +1227,37 @@
             drawRect(x + s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black'); 
         }
 
-        // NUEVO: Dibuja los personajes y el árbol para la portada
+        // NUEVO: Dibuja los personajes y el árbol para la portada (POSICIÓN A ESCALA)
         function drawTitleCharacters() {
+            // Asegura que el canvas siempre se limpie en sus dimensiones actuales
             ctx.clearRect(0, 0, W, H);
             
-            // 1. Configurar posiciones de los personajes en el centro del canvas (mitad vertical)
-            const TREE_SIZE = 80; 
-            const CHARACTER_SIZE = 50; 
-            const OFFSET = 200; 
+            // Tamaños y offsets que son proporcionales a las dimensiones del canvas (W, H)
+            const MIN_DIM = Math.min(W, H); 
+            const TREE_SIZE = MIN_DIM * 0.12; 
+            const CHARACTER_SIZE = MIN_DIM * 0.08; 
+            const OFFSET = W * 0.25; 
             
-            // La posición Y central del canvas relativa a su propio sistema de coordenadas (800x600)
-            const CENTER_Y = H * 0.55; 
+            // CLAVE: CENTRAMOS EN EL CENTRO DEL CANVAS
+            const CENTER_X = W / 2;
+            const CENTER_Y = H / 2; 
 
-            tree.x = W / 2;
+            // 1. Árbol (Centro)
+            tree.x = CENTER_X;
             tree.y = CENTER_Y;
             tree.size = TREE_SIZE; 
             drawTree(); 
             tree.size = 40; 
             
-            // 2. Dibujar Santa a la derecha del árbol
-            const santaX = W / 2 + OFFSET; 
-            const santaY = CENTER_Y - 50; 
+            // 2. Santa (Derecha)
+            const santaX = CENTER_X + OFFSET; 
+            const santaY = CENTER_Y + CHARACTER_SIZE * 0.2; // Pequeño ajuste visual para la base
             drawSanta(santaX, santaY, CHARACTER_SIZE, gameFrame / 5); 
 
-            // 3. Dibujar un enemigo a la izquierda del árbol (tipo más común)
-            const enemyX = W / 2 - OFFSET; 
-            const enemyY = CENTER_Y - 50; 
+            // 3. Enemigo (Izquierda)
+            const enemyX = CENTER_X - OFFSET; 
+            const enemyY = CENTER_Y + CHARACTER_SIZE * 0.2; 
             
-            // Renderizar Enemigo (basado en lógica drawEnemies)
             const e = { 
                 x: enemyX, 
                 y: enemyY, 
@@ -1369,32 +1315,13 @@
             drawRect(e.x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333'); 
         }
 
-        function drawTitleText(x, y, message, fontSize, color, align = 'center') {
-            // Ya no se usa para el título principal, que ahora es HTML
-            ctx.fillStyle = color;
-            ctx.font = `${fontSize}px monospace`;
-            ctx.textAlign = align;
-            
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 4;
-            ctx.shadowOffsetY = 4;
-            
-            ctx.fillText(message, x, y);
-            
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.shadowColor = 'transparent';
-        }
-
         // --- FUNCIÓN MEJORADA: DIBUJA LA PANTALLA DE TÍTULO EN EL CANVAS ---
         function drawTitleScreen() {
              drawTitleCharacters();
         }
 
         
-        function drawGameObjects() {
-            // Limpiar fondo (el canvas tiene un fondo semi-transparente CSS ahora)
+        function drawGameObjects() { /* ... (se mantiene) ... */
             ctx.clearRect(0, 0, W, H); 
             
             ctx.filter = 'none';
@@ -1416,8 +1343,7 @@
             drawHUD();
         }
         
-        function drawTree() {
-            const healthRatio = tree.health / tree.maxHealth;
+        function drawTree() { /* ... (se mantiene) ... */
             const treeBaseW = tree.size * 2;
             const baseCenterY = tree.y + tree.size / 2;
             
@@ -1488,7 +1414,7 @@
             ctx.filter = 'none';
         }
 
-        function drawEnemies() {
+        function drawEnemies() { /* ... (se mantiene) ... */
             enemies.forEach(e => {
                 const x = e.x;
                 const y = e.y;
@@ -1546,13 +1472,13 @@
             });
         }
 
-        function drawBullets() {
+        function drawBullets() { /* ... (se mantiene) ... */
             bullets.forEach(b => {
                 drawRect(b.x, b.y, b.size, b.size, b.color);
             });
         }
         
-        function drawDialogueBubble(x, y, message) {
+        function drawDialogueBubble(x, y, message) { /* ... (se mantiene) ... */
             const FONT_SIZE = 16;
             const MAX_WIDTH_CHARS = 25; 
             const PADDING = 8;
@@ -1610,7 +1536,7 @@
         }
 
 
-        function drawHUD() {
+        function drawHUD() { /* ... (se mantiene) ... */
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
             
@@ -1656,34 +1582,38 @@
             ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
             
             
-            const powerUpRatio = Math.min(1, enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
+            // --- LÓGICA DE BARRA DE POWER UP ---
             const powerBarWidth = 300;
             const powerBarHeight = 15;
             const powerBarX = W / 2 - powerBarWidth / 2;
             const powerBarY = H - 30; 
-
-            let glitchOffset = 0;
-            let barColor = '#FF00FF'; 
-
-            if (powerUpRatio === 1) {
-                glitchOffset = 0; 
-                barColor = (Math.floor(gameFrame / 5) % 2 === 0) ? '#00FFFF' : '#FF00FF'; 
-                ctx.filter = 'none'; 
+            
+            let powerColor = '#FF00FF';
+            let barFillWidth;
+            let barText;
+            
+            if (santa.invincibleTimer > 0) {
+                const durationRatio = santa.invincibleTimer / POWERUP_DURATION;
+                barFillWidth = powerBarWidth * durationRatio;
+                powerColor = (Math.floor(gameFrame / 5) % 2 === 0) ? '#00FFFF' : '#FF00FF'; 
+                barText = `INVENCIBLE: ${Math.ceil(santa.invincibleTimer / 60)}s`;
             } else {
-                ctx.filter = 'none';
+                const accumulationRatio = Math.min(1, enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
+                barFillWidth = powerBarWidth * accumulationRatio;
+                powerColor = '#FF00FF'; 
+                barText = `POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`;
             }
 
-            ctx.strokeStyle = barColor;
-            ctx.strokeRect(powerBarX + glitchOffset, powerBarY, powerBarWidth, powerBarHeight);
+            ctx.strokeStyle = powerColor;
+            ctx.strokeRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
 
-            ctx.fillStyle = barColor;
-            ctx.fillRect(powerBarX + glitchOffset, powerBarY, powerBarWidth * powerUpRatio, powerBarHeight);
-
-            ctx.filter = 'none';
+            ctx.fillStyle = powerColor;
+            ctx.fillRect(powerBarX, powerBarY, barFillWidth, powerBarHeight);
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
-            ctx.fillText(`POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`, W / 2, powerBarY - 10);
+            ctx.fillText(barText, W / 2, powerBarY - 10);
+            // --- FIN LÓGICA DE BARRA DE POWER UP ---
             
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
@@ -1709,7 +1639,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function resetGame() {
+        function resetGame() { /* ... (se mantiene) ... */
             if (backgroundMusicSource) {
                 try { backgroundMusicSource.stop(); } catch (e) {}
                 backgroundMusicSource = null;
