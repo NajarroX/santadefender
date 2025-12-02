@@ -140,7 +140,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            /* CLAVE: Margen inferior para separarlo del borde del viewport */
+            /* CLAVE: Espacio de 50px de la orilla inferior */
             margin-bottom: 50px; 
         }
 
@@ -156,7 +156,6 @@
             box-shadow: 0 5px 0 #FF3333, 0 8px 0 #990000; 
             cursor: pointer;
             text-align: center;
-            /* margin-bottom: 10px; se elimina de aquí y se va a #controlArea */
             margin-bottom: 15px; /* Mantiene la distancia con la caja de instrucciones */
             line-height: 1;
             user-select: none;
@@ -202,7 +201,7 @@
         }
 
 
-        /* --- RESPONSIVE GENERAL --- */
+        /* --- RESPONSIVE GENERAL (Max 800px) --- */
         @media (max-width: 800px) {
              #mainTitle {
                 font-size: 40px; 
@@ -218,8 +217,8 @@
              }
              
              #controlArea {
-                /* CLAVE: Espacio de 20px de la orilla inferior en móvil */
-                margin-bottom: 20px; 
+                /* CLAVE: Espacio de 30px de la orilla inferior en tablet/móvil horizontal */
+                margin-bottom: 30px; 
              }
 
              #startButton {
@@ -250,7 +249,8 @@
              }
              
              #controlArea {
-                 margin-bottom: 10px; /* Margen muy pequeño en dispositivos muy pequeños */
+                 /* CLAVE: Espacio de 20px en móvil vertical para máxima seguridad */
+                 margin-bottom: 20px; 
              }
              
              #instructions {
@@ -836,11 +836,12 @@
             if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (santa.invincibleTimer > 0)) {
                 const currentTime = Date.now();
                 if (currentTime - santa.lastShotTime > currentFireRate) {
+                    // CÁLCULO DE LA DIRECCIÓN HACIA EL CENTRO DEL ÁRBOL
                     const dx = tree.x - santa.x;
                     const dy = tree.y - santa.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    const nx = dx / dist;
-                    const ny = dy / dist;
+                    const nx = dx / dist; // Componente X de dirección normalizada
+                    const ny = dy / dist; // Componente Y de dirección normalizada
 
                     bullets.push({
                         x: santa.x,
