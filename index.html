@@ -145,8 +145,8 @@
         // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
         const POWERUP_DURATION = 300; 
-        const INVINCIBILITY_PHRASE_DURATION = 90; // Duración corta para que sea intermitente (1.5 segundos)
-        const INVINCIBILITY_PHRASE_CHANCE = 0.40; // 40% de probabilidad por frame (para intermitencia)
+        const INVINCIBILITY_PHRASE_DURATION = 90; 
+        const INVINCIBILITY_PHRASE_CHANCE = 0.40; 
         
         // --- TIPOS DE ENEMIGOS (Velocidad Variable) ---
         const ENEMY_TYPES = [
@@ -159,7 +159,7 @@
         // --- HITO DE PUNTUACIÓN Y CURACIÓN ---
         const HEAL_SCORE_HIT = 1000;
         let lastHealScore = 0;
-        const GLOW_DURATION = 30; // 30 frames para el destello de curación (0.5 segundos)
+        const GLOW_DURATION = 30; 
 
         // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
@@ -186,35 +186,32 @@
             color: '#00aa00', 
             health: 50,
             maxHealth: 50,
-            healingGlowTimer: 0 // Nuevo temporizador para el glow
+            healingGlowTimer: 0 
         };
         const treeHealthMax = tree.maxHealth;
 
         let bullets = [];
         let enemies = [];
         let explosions = []; 
+        let floatingTexts = []; // NUEVO: Array para manejar textos animados
         let score = 0;
         let enemiesDefeatedSincePowerUp = 0; 
         let powerUpTimer = 0; 
-        let gameFrame = 0; // Nuevo contador de frames para la animación
+        let gameFrame = 0; 
         
         let dialogue = {
-            // **FRASE INICIAL ANTI-CAPITALISTA**
             message: "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.",
             duration: PHRASE_DURATION,
-            powerUpMessage: null // Mensaje específico para el Power Up
+            powerUpMessage: null 
         };
 
-        // **FRASES DE INVENCIBILIDAD ANTI-CAPITALISTA (3 frases)**
         const invincibilityPhrases = [
             "¡Fuera de aquí, parásitos capitalistas!",
             "¡El capital no puede con la magia de un Santa sindicalizado!",
             "¡El único regalo que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
         ];
         
-        // **FRASES SARCÁSTICAS Y CRÍTICAS AL CAPITALISMO**
         const sarcasticPhrases = [
-            // Árbol con ALTA salud (40+ HP): Sarcasmo sobre la estabilidad y la codicia
             { min: 40, phrases: [
                 "¡Luchando por el árbol, el único bien público que queda en pie!", 
                 "¡Mis elfos no tienen sindicato, son la verdadera tragedia aquí, no estos demonios!", 
@@ -222,7 +219,6 @@
                 "¡El precio de la hora extra es lo que realmente duele, no sus mordiscos!", 
                 "¡Defender este árbol es la nueva 'responsabilidad social corporativa'!"
             ] },
-            // Árbol con SALUD MEDIA (25+ HP): Crítica al sistema y el esfuerzo
             { min: 25, phrases: [
                 "¿En serio? ¿Tantos enemigos y la riqueza sigue concentrada en los de arriba?", 
                 "¡Esto es lo que pasa cuando privatizas el Polo Norte!", 
@@ -230,7 +226,6 @@
                 "¡Al menos estos monstruos trabajan, a diferencia de los parásitos de la junta directiva!", 
                 "¡Mi nómina está congelada, pero mi furia no!"
             ] },
-            // Árbol con BAJA salud (1+ HP): Humor negro y desesperación
             { min: 1, phrases: [
                 "¡La recesión de salud llegó antes de lo esperado! ¡Sálvese quien pueda!", 
                 "¡Parece que el mercado se está 'ajustando' a la baja, justo como mi moral!", 
@@ -249,16 +244,10 @@
         let isMuted = false;
         let backgroundMusicSource = null; 
 
-        // Frecuencias MIDI para "Jingle Bells" (en G Mayor)
         const C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392.00, A4 = 440.00; 
-        const C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99;
-        
-        // NOTAS: 1.0 = Negra; 0.5 = Corchea; 2.0 = Blanca
         const tempo = 0.25; 
 
-        // Melodía precisa de "Jingle Bells" (Verso y Estribillo, 16 compases en 2/4)
         const melody = [
-            // Verso (Compases 1-8: Dashing through the snow...)
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 }, 
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
             { freq: E4, duration: 0.5 }, { freq: G4, duration: 0.5 }, { freq: C4, duration: 0.5 }, { freq: D4, duration: 0.5 },
@@ -267,8 +256,6 @@
             { freq: F4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.25 }, { freq: D4, duration: 0.25 },
             { freq: D4, duration: 0.5 }, { freq: D4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: D4, duration: 0.5 },
             { freq: G4, duration: 2.0 }, 
-
-            // Estribillo (Compases 9-16: Jingle Bells, jingle bells...)
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
             { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
             { freq: E4, duration: 0.5 }, { freq: G4, duration: 0.5 }, { freq: C4, duration: 0.5 }, { freq: D4, duration: 0.5 },
@@ -334,9 +321,6 @@
             playSequence(audioContext.currentTime);
         }
 
-        /**
-         * Genera un efecto de sonido simple de 8 bits.
-         */
         function playSound(frequency, duration, type, endFrequency = frequency, volume = 0.5) {
             if (isMuted) return;
 
@@ -375,22 +359,18 @@
         function toggleAudio() {
             isMuted = !isMuted;
             if (isMuted) {
-                // Silenciar el MasterGain para detener MÚSICA y EFECTOS
                 masterGain.gain.setValueAtTime(0, audioContext.currentTime);
                 audioToggle.textContent = '🔇';
                 
-                // Detener la reproducción del loop actual explícitamente si está activo
                 if (backgroundMusicSource) {
                      try { backgroundMusicSource.stop(audioContext.currentTime); } catch (e) {}
                      backgroundMusicSource = null;
                 }
                 
             } else {
-                // Reactivar el MasterGain y reintentar la música
                 masterGain.gain.setValueAtTime(1, audioContext.currentTime);
                 audioToggle.textContent = '🔊';
                 
-                // Si la música estaba detenida debido al mute, la reiniciamos
                 if (gameState === 'PLAYING' && !backgroundMusicSource) {
                      startBackgroundMusic();
                 }
@@ -399,7 +379,6 @@
         
         audioToggle.addEventListener('click', toggleAudio);
         
-        // --- Listener para el atajo de teclado TAB ---
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Tab' && gameState === 'PLAYING') {
                 e.preventDefault();
@@ -407,7 +386,7 @@
             }
         });
         
-        // --- CLASE EXPLOSIÓN (Sin cambios) ---
+        // --- CLASE EXPLOSIÓN ---
         class Explosion {
             constructor(x, y, color) {
                 this.particles = [];
@@ -437,6 +416,44 @@
                     ctx.fillStyle = p.color;
                     ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
                 });
+            }
+        }
+
+        // --- NUEVA CLASE PARA TEXTOS FLOTANTES ---
+        class FloatingText {
+            constructor(x, y, text, color) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.vy = -1.5; // Velocidad vertical (sube)
+                this.life = 60; // Duración en frames (aprox 1 segundo)
+                this.maxLife = 60;
+            }
+            update() {
+                this.y += this.vy;
+                this.life--;
+                return this.life > 0; // Retorna true si sigue vivo
+            }
+            draw() {
+                // Calcula la transparencia (alpha) basada en la vida restante
+                const alpha = this.life / this.maxLife;
+                ctx.globalAlpha = alpha;
+                
+                ctx.fillStyle = this.color;
+                ctx.font = '24px monospace';
+                ctx.textAlign = 'center';
+                
+                // Agrega una sombra ligera para que el texto resalte
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 3;
+                
+                ctx.fillText(this.text, this.x, this.y);
+                
+                // Restaura el estado del contexto (importante)
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent';
             }
         }
         
@@ -481,7 +498,7 @@
                 gameState = 'PLAYING';
                 resetGame();
                 
-                startBackgroundMusic(); // INICIA LA MÚSICA
+                startBackgroundMusic(); 
 
                 if (isMobile) {
                     controls.style.display = 'block';
@@ -609,6 +626,9 @@
                     if (checkCollision(bullet, enemy)) {
                         explosions.push(new Explosion(enemy.x, enemy.y, enemy.color)); 
                         
+                        // Añadir texto de puntuación
+                        floatingTexts.push(new FloatingText(enemy.x, enemy.y, '+10', '#00FFFF'));
+
                         enemies.splice(j, 1); 
                         bullets.splice(i, 1); 
                         score += 10;
@@ -627,36 +647,25 @@
         }
         
         function updatePowerUp(deltaTime) {
-            // Invencibilidad y Power-Up
             if (santa.invincibleTimer > 0) {
                 santa.invincibleTimer -= (deltaTime / (1000 / 60)); 
                 if (santa.invincibleTimer <= 0) {
                     santa.invincible = false;
                     santa.invincibleTimer = 0;
-                    // Muestra el mensaje final de duración normal
                     dialogue.message = "¡Se agotó la invencibilidad!";
                     dialogue.duration = PHRASE_DURATION;
-                    dialogue.powerUpMessage = null; // Limpia el mensaje del power up
+                    dialogue.powerUpMessage = null; 
                 }
             }
             
             if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
-                // El power-up rellena la salud de Santa
                 santa.health = santa.maxHealth; 
-                
-                // Activa la invencibilidad
                 santa.invincible = true;
                 santa.invincibleTimer = POWERUP_DURATION; 
-                
                 enemiesDefeatedSincePowerUp = 0; 
-                
-                // Selecciona una de las 3 frases aleatoriamente y la guarda
                 dialogue.powerUpMessage = invincibilityPhrases[Math.floor(Math.random() * invincibilityPhrases.length)]; 
-                
-                // Muestra la frase por primera vez
                 dialogue.message = dialogue.powerUpMessage;
                 dialogue.duration = INVINCIBILITY_PHRASE_DURATION;
-                
                 playSound(300, 0.2, 'sawtooth', 700);
             }
         }
@@ -673,10 +682,7 @@
                     tree.health = newHealth;
                     dialogue.message = `¡HITO! El árbol se ha regenerado un 50%. HP: ${tree.health}`;
                     dialogue.duration = PHRASE_DURATION;
-                    
-                    // Activa el glow de curación
                     tree.healingGlowTimer = GLOW_DURATION; 
-                    
                     playHealSound();
                 }
             }
@@ -712,6 +718,14 @@
             }
         }
         
+        function updateFloatingTexts() {
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                if (!floatingTexts[i].update()) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+        }
+
         function spawnEnemies() {
             if (Math.random() < spawnRate) { 
                 
@@ -793,6 +807,9 @@
                     tree.health -= 1;
                     enemies.splice(i, 1);
                     
+                    // Añadir texto de daño al árbol
+                    floatingTexts.push(new FloatingText(tree.x, tree.y - tree.size * 0.8, '-1', '#FF0000'));
+                    
                     if (tree.health <= 0) {
                         alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
                         playSound(200, 1.0, 'sine', 50);
@@ -814,18 +831,14 @@
                 dialogue.duration -= (deltaTime / (1000 / 60)); 
             }
 
-            // 1. Manejo del diálogo de Power Up (40% de probabilidad de aparecer)
             if (santa.invincibleTimer > 0 && dialogue.powerUpMessage && dialogue.duration <= 0) {
                 if (Math.random() < INVINCIBILITY_PHRASE_CHANCE) {
                     dialogue.message = dialogue.powerUpMessage;
                     dialogue.duration = INVINCIBILITY_PHRASE_DURATION; 
                 }
-                // Evita que aparezcan frases normales
                 return;
             }
 
-
-            // 2. Manejo de las frases sarcásticas normales (Solo si no hay power up activo)
             timeSinceLastPhrase += deltaTime;
             if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0 && santa.invincibleTimer <= 0) {
                 let eligiblePhrases = [];
@@ -860,12 +873,12 @@
             handleShooting(deltaTime);
             updateBullets();
             updateExplosions(); 
+            updateFloatingTexts(); // AÑADIDO: Actualiza la posición y vida de los textos
             spawnEnemies();
             updateEnemies();
             updateDialogue(deltaTime); 
             checkHealHit();
             
-            // Actualiza el contador de frames y el glow de curación
             gameFrame++; 
             if (tree.healingGlowTimer > 0) {
                 tree.healingGlowTimer--;
@@ -885,9 +898,6 @@
             ctx.fill();
         }
 
-        /**
-         * Función para convertir HUE (0-360) a un color RGB hexadecimal.
-         */
         function hueToRgb(p) {
             const h = p % 360;
             const chroma = 255; 
@@ -909,60 +919,41 @@
                 [r, g, b] = [chroma, 0, x];
             }
             
-            // Convertir a hexadecimal
             const toHex = (c) => Math.round(c).toString(16).padStart(2, '0');
             return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
         }
 
 
-        /**
-         * Dibuja a Santa con detalles de 8 bits.
-         */
         function drawSanta(x, y, size, frame) {
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
                 return;
             }
 
-            const s = size; // 20
-            const halfS = s / 2; // 10
-            const p = s / 20; // 1 (pixel unit)
-            // Offset para la animación de caminar
-            const legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15; // 3 or -3
+            const s = size; 
+            const halfS = s / 2; 
+            const p = s / 20; 
+            const legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15; 
 
             // -- SOMBRERO --
-            // Hat (Red triangle/box)
             drawRect(x + s * 0.05, y - halfS + p, s * 0.8, s * 0.3, 'red'); 
-            // White Trim
             drawRect(x, y - halfS + p * 3, s, p * 2, 'white'); 
-            // Pom pom tip
             drawCircle(x + s * 0.4, y - halfS + p, s * 0.15, 'white'); 
 
             // -- CABEZA Y BARBA --
-            // Face (Skin)
             drawRect(x, y - s * 0.25, s * 0.5, s * 0.3, '#FFDBAC'); 
-            
-            // Beard (White) - Main body
             drawRect(x, y + s * 0.05, s * 0.8, s * 0.3, 'white'); 
-            
-            // Eyes (Small black dots on the face)
             drawRect(x - s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
             drawRect(x + s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
 
             // -- CUERPO --
-            // Body (Red Jacket)
             drawRect(x, y + s * 0.3, s, s * 0.4, 'red');
-
-            // Belt (Black with Gold Buckle)
             drawRect(x, y + s * 0.3, s, s * 0.15, 'black');
-            drawRect(x, y + s * 0.3, s * 0.25, s * 0.2, '#FFD700'); // Buckle
-            
-            // White Fur Trim (Jacket Bottom)
+            drawRect(x, y + s * 0.3, s * 0.25, s * 0.2, '#FFD700'); 
             drawRect(x, y + s * 0.55, s, p * 2, 'white');
 
             // -- PIERNAS / BOTAS --
-            // Boots (Black)
-            drawRect(x - s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); // Left
-            drawRect(x + s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); // Right
+            drawRect(x - s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); 
+            drawRect(x + s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); 
         }
 
         function drawTitleText(x, y, message, fontSize, color, align = 'center') {
@@ -1010,7 +1001,6 @@
         }
         
         function drawGameObjects() {
-            // Aplicar el glitch solo si Santa es invencible (para el fondo)
             if (santa.invincibleTimer > 0) {
                 applyPsychedelicGlitch();
             } else {
@@ -1035,6 +1025,10 @@
             drawBullets();
             drawSanta(santa.x, santa.y, santa.size, santa.frame); 
             explosions.forEach(exp => exp.draw());
+            
+            // DIBUJA LOS TEXTOS FLOTANTES
+            floatingTexts.forEach(t => t.draw());
+
             drawHUD();
             
             // Restablecer el contexto para evitar que el HUD se vea afectado por el glitch
@@ -1055,9 +1049,6 @@
             }
         }
         
-        /**
-         * Dibuja el árbol con aura y luces animadas (VERSIÓN MEJORADA DE GLOW).
-         */
         function drawTree() {
             const healthRatio = tree.health / tree.maxHealth;
             const treeTop = tree.y - tree.size;
@@ -1065,32 +1056,25 @@
             const treeW = tree.size;
             
             // --- 1. Aura Iridiscente Pulsante (Basado en el HP) ---
-            
-            // Paso 1: Determinar el color base y el tamaño del glow
-            const hue = (gameFrame * 2) % 360; // Ciclo de 360 grados para el color
+            const hue = (gameFrame * 2) % 360; 
             const auraColor = hueToRgb(hue);
             
-            // El radio del blur pulsa ligeramente
             const baseGlow = 10;
-            const glowPulse = Math.sin(gameFrame * 0.1) * 3; // +3 a -3
+            const glowPulse = Math.sin(gameFrame * 0.1) * 3; 
             const glowSize = Math.max(0, baseGlow * healthRatio + glowPulse);
             
-            // Si el HP es muy bajo, el glow es solo rojo para advertir
             if (healthRatio < 0.2) {
                 ctx.shadowColor = `rgba(255, 0, 0, 1)`;
                 ctx.shadowBlur = baseGlow * 1.2;
             } else {
                 ctx.shadowColor = auraColor;
-                // El glow se reduce con el HP, pero el mínimo es 5 para que se vea
                 ctx.shadowBlur = Math.max(5, glowSize);
             }
             
-            // El offset del aura es ahora el tamaño del glow
             const auraOffset = Math.max(5, baseGlow * healthRatio * 0.5); 
 
             // --- 2. Dibujar la Forma del Aura ---
-            // Usamos un color con alfa significativo para forzar la visibilidad del glow
-            ctx.fillStyle = `rgba(255, 255, 255, ${healthRatio * 0.2 + 0.1})`; // Color base más blanco para mejor glow
+            ctx.fillStyle = `rgba(255, 255, 255, ${healthRatio * 0.2 + 0.1})`; 
             ctx.beginPath();
             ctx.moveTo(tree.x, treeTop - auraOffset); 
             ctx.lineTo(tree.x - treeW - auraOffset, treeBaseY + auraOffset);
@@ -1103,10 +1087,9 @@
                 const glowRatio = tree.healingGlowTimer / GLOW_DURATION;
                 const glowAlpha = Math.sin(Math.PI * (1 - glowRatio)); 
                 
-                ctx.shadowColor = `rgba(0, 255, 0, 1)`; // Color verde fuerte
-                ctx.shadowBlur = 25 * glowAlpha; // Glow grande y brillante
+                ctx.shadowColor = `rgba(0, 255, 0, 1)`; 
+                ctx.shadowBlur = 25 * glowAlpha; 
                 
-                // Dibujar un segundo triángulo para el glow verde
                 ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha * 0.5})`; 
                 ctx.beginPath();
                 ctx.moveTo(tree.x, treeTop - auraOffset); 
@@ -1116,14 +1099,14 @@
                 ctx.fill();
             }
 
-            // --- 4. Reiniciar el contexto (Importante antes de dibujar el cuerpo) ---
+            // --- 4. Reiniciar el contexto ---
             ctx.shadowBlur = 0;
             ctx.shadowColor = 'transparent';
             
             // --- 5. Tronco ---
             drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
             
-            // --- 6. Cuerpo del Árbol (Sin cambios, para que no tenga glow) ---
+            // --- 6. Cuerpo del Árbol ---
             ctx.fillStyle = tree.color;
             ctx.beginPath();
             ctx.moveTo(tree.x, treeTop); 
@@ -1133,44 +1116,38 @@
             ctx.fill();
             
             // --- 7. Luces Animadas ---
-            const pulse = Math.floor(gameFrame / 10) % 3; // 3 fases de animación
+            const pulse = Math.floor(gameFrame / 10) % 3; 
             const colors = ['yellow', 'red', 'blue'];
             
-            // Ornamento 1 (Arriba, 0, 3, 6, ...)
             drawCircle(tree.x - 10, tree.y - 15, 3, colors[(pulse + 0) % 3]);
-            // Ornamento 2 (Medio, 1, 4, 7, ...)
             drawCircle(tree.x + 15, tree.y, 3, colors[(pulse + 1) % 3]);
-            // Ornamento 3 (Abajo, 2, 5, 8, ...)
             drawCircle(tree.x - 5, tree.y + 10, 3, colors[(pulse + 2) % 3]);
         }
 
-        /**
-         * Dibuja a los enemigos con detalle: cuerpo cuadrado, cuernos y ojos brillantes.
-         */
         function drawEnemies() {
             enemies.forEach(e => {
                 const x = e.x;
                 const y = e.y;
-                const s = e.size; // 15
+                const s = e.size; 
                 const color = e.color; 
                 
                 // 1. Cuerpo base (Cuadrado central)
                 ctx.fillStyle = color;
                 ctx.fillRect(x - s / 2, y - s / 2, s, s);
 
-                // 2. Head Spikes/Horns (Puntas/Cuernos)
+                // 2. Head Spikes/Horns
                 ctx.beginPath();
                 ctx.moveTo(x - s * 0.4, y - s * 0.5);
-                ctx.lineTo(x, y - s * 0.8); // Pico central
+                ctx.lineTo(x, y - s * 0.8); 
                 ctx.lineTo(x + s * 0.4, y - s * 0.5);
                 ctx.fill();
 
-                // 3. Glowing Evil Eyes (Amarillo o Rojo, más pequeños)
+                // 3. Glowing Evil Eyes
                 ctx.fillStyle = '#FFFF00'; 
-                ctx.fillRect(x - s * 0.3, y - s * 0.3, s * 0.15, s * 0.15); // Izquierdo
-                ctx.fillRect(x + s * 0.15, y - s * 0.3, s * 0.15, s * 0.15); // Derecho
+                ctx.fillRect(x - s * 0.3, y - s * 0.3, s * 0.15, s * 0.15); 
+                ctx.fillRect(x + s * 0.15, y - s * 0.3, s * 0.15, s * 0.15); 
 
-                // 4. Sharp Teeth/Mouth (Boca simple)
+                // 4. Sharp Teeth/Mouth
                 ctx.fillStyle = '#CCCCCC'; 
                 ctx.fillRect(x - s * 0.2, y + s * 0.1, s * 0.4, s * 0.1); 
             });
@@ -1183,25 +1160,22 @@
         
         function drawDialogueBubble(x, y, message) {
             const FONT_SIZE = 16;
-            const MAX_WIDTH_CHARS = 25; // Caracteres máximos por línea
+            const MAX_WIDTH_CHARS = 25; 
             const PADDING = 8;
             const LINE_HEIGHT = FONT_SIZE + 4;
             
             ctx.font = `${FONT_SIZE}px monospace`;
             ctx.textAlign = 'center';
 
-            // 1. Envolver el texto
             let lines = [message];
             let maxLineW = 0;
             
-            // Simulación de auto-envoltura simple
             if (message.length > MAX_WIDTH_CHARS) {
                 const words = message.split(' ');
                 lines = [''];
                 let currentLine = 0;
                 
                 for (const word of words) {
-                    // Si añadir la palabra actual supera el límite, crea una nueva línea
                     if (lines[currentLine].length + word.length + 1 > MAX_WIDTH_CHARS && currentLine < 1) {
                         currentLine++;
                         lines.push(word + ' ');
@@ -1211,7 +1185,6 @@
                 }
             }
 
-            // 2. Medir el ancho máximo de línea
             for (const line of lines) {
                 maxLineW = Math.max(maxLineW, ctx.measureText(line.trim()).width);
             }
@@ -1222,21 +1195,18 @@
             const bubbleH = (numLines * LINE_HEIGHT) + PADDING * 1.5;
             
             const bubbleX = x - bubbleW / 2;
-            const bubbleY = y - santa.size - bubbleH - 10; // 10px de separación
+            const bubbleY = y - santa.size - bubbleH - 10; 
 
-            // 3. Dibujar el Globo (Rectángulo redondeado)
             ctx.fillStyle = 'white';
             ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
             
-            // 4. Dibujar el Pico (Triángulo que apunta a Santa)
             ctx.beginPath();
             ctx.moveTo(x - 5, bubbleY + bubbleH);
             ctx.lineTo(x + 5, bubbleY + bubbleH);
-            ctx.lineTo(x, bubbleY + bubbleH + 6); // 6px de altura del pico
+            ctx.lineTo(x, bubbleY + bubbleH + 6); 
             ctx.closePath();
             ctx.fill();
 
-            // 5. Dibujar el Texto
             ctx.fillStyle = 'black';
             let currentTextY = bubbleY + PADDING + LINE_HEIGHT * 0.75;
             
@@ -1250,38 +1220,33 @@
             ctx.fillStyle = 'white';
             ctx.font = '20px monospace';
             
-            // Puntuación
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             
-            // --- BARRA DE SALUD DEL ÁRBOL (Superior Central) ---
+            // --- BARRA DE SALUD DEL ÁRBOL ---
             const treeHealthRatio = tree.health / tree.maxHealth;
             const barWidth = 300;
             const barHeight = 15;
             const barX = W / 2 - barWidth / 2;
             const barY = 15;
             
-            // Glow de curación (si está activo) - Solo el glow alrededor de la barra
             if (tree.healingGlowTimer > 0) {
                 const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.5;
                 ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha})`;
                 ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
             }
 
-            // Marco de la barra
             ctx.strokeStyle = '#00aa00';
             ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-            // Relleno de la barra (Rojo a Verde)
             ctx.fillStyle = treeHealthRatio > 0.5 ? '#00FF00' : (treeHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
             ctx.fillRect(barX, barY, barWidth * treeHealthRatio, barHeight);
 
-            // Texto de salud del árbol
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.fillText(`ÁRBOL: ${tree.health}/${tree.maxHealth}`, W / 2, barY + barHeight + 20);
 
-            // --- BARRA DE SALUD DE SANTA (Superior Derecha) ---
+            // --- BARRA DE SALUD DE SANTA ---
             const santaHealthRatio = santa.health / santa.maxHealth;
             const santaBarWidth = 150;
             const santaBarHeight = 15;
@@ -1298,7 +1263,7 @@
             ctx.textAlign = 'right';
             ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
             
-            // Diálogo (si está activo, encima de Santa)
+            // Diálogo
             if (dialogue.duration > 0) {
                 drawDialogueBubble(santa.x, santa.y, dialogue.message);
             }
@@ -1325,7 +1290,6 @@
         }
 
         function resetGame() {
-            // Detener la música si existe
             if (backgroundMusicSource) {
                 try { backgroundMusicSource.stop(); } catch (e) {}
                 backgroundMusicSource = null;
@@ -1338,25 +1302,25 @@
             santa.invincible = false;
             santa.invincibleTimer = 0;
             tree.health = tree.maxHealth;
-            tree.healingGlowTimer = 0; // Reset del glow
+            tree.healingGlowTimer = 0; 
             score = 0;
             lastHealScore = 0;
             enemies = [];
             bullets = [];
             explosions = []; 
+            floatingTexts = []; // RESET DE TEXTOS FLOTANTES
             enemiesDefeatedSincePowerUp = 0; 
             powerUpTimer = 0; 
-            gameFrame = 0; // Reset del contador de frames
+            gameFrame = 0; 
             
             dialogue.message = "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'."; 
             dialogue.duration = PHRASE_DURATION;
-            dialogue.powerUpMessage = null; // Reset el mensaje guardado
+            dialogue.powerUpMessage = null; 
             timeSinceLastPhrase = 0;
         }
 
         audioToggle.style.display = 'none';
 
-        // Iniciar el bucle de juego
         requestAnimationFrame(gameLoop);
 
     </script>
