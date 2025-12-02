@@ -141,6 +141,8 @@
         const JOYSTICK_RADIUS = 75; 
         const PHRASE_DURATION = 300; 
         const PHRASE_INTERVAL = 8000; 
+        const HIT_DURATION = 10; // Duración de la animación de golpe de Santa
+        const GLITCH_DURATION = 15; // NUEVO: Duración del efecto glitch en el árbol
         
         // --- POWER-UP CONSTANTES ---
         const ENEMIES_FOR_POWERUP = 10;
@@ -176,7 +178,8 @@
             fireRate: 200,
             frame: 0,
             invincible: false, 
-            invincibleTimer: 0 
+            invincibleTimer: 0,
+            hitTimer: 0
         };
 
         let tree = {
@@ -186,14 +189,15 @@
             color: '#00aa00', 
             health: 50,
             maxHealth: 50,
-            healingGlowTimer: 0 
+            healingGlowTimer: 0, 
+            damageGlitchTimer: 0 // NUEVO: Temporizador de glitch
         };
         const treeHealthMax = tree.maxHealth;
 
         let bullets = [];
         let enemies = [];
         let explosions = []; 
-        let floatingTexts = []; // NUEVO: Array para manejar textos animados
+        let floatingTexts = []; 
         let score = 0;
         let enemiesDefeatedSincePowerUp = 0; 
         let powerUpTimer = 0; 
@@ -419,7 +423,7 @@
             }
         }
 
-        // --- NUEVA CLASE PARA TEXTOS FLOTANTES ---
+        // --- CLASE PARA TEXTOS FLOTANTES ---
         class FloatingText {
             constructor(x, y, text, color) {
                 this.x = x;
@@ -436,7 +440,6 @@
                 return this.life > 0; // Retorna true si sigue vivo
             }
             draw() {
-                // Calcula la transparencia (alpha) basada en la vida restante
                 const alpha = this.life / this.maxLife;
                 ctx.globalAlpha = alpha;
                 
@@ -444,13 +447,11 @@
                 ctx.font = '24px monospace';
                 ctx.textAlign = 'center';
                 
-                // Agrega una sombra ligera para que el texto resalte
                 ctx.shadowColor = 'black';
                 ctx.shadowBlur = 3;
                 
                 ctx.fillText(this.text, this.x, this.y);
                 
-                // Restaura el estado del contexto (importante)
                 ctx.globalAlpha = 1;
                 ctx.shadowBlur = 0;
                 ctx.shadowColor = 'transparent';
@@ -689,6 +690,8 @@
         }
 
         function updatePlayerMovement() {
+            const originalY = BASE_H / 2 + santa.y - (BASE_H / 2);
+
             if (!isMobile) {
                 santa.dirX = 0;
                 santa.dirY = 0;
@@ -697,18 +700,33 @@
                 if (keys['KeyW'] || keys['ArrowUp']) santa.dirY = -1;
                 if (keys['KeyS'] || keys['ArrowDown']) santa.dirY = 1;
             }
+            
             const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
-            if (magnitude > 0) {
+
+            // ANIMACIÓN DE GOLPE (Salto)
+            if (santa.hitTimer > 0) {
+                // Pequeño retroceso en Y para simular el golpe
+                santa.y -= 3 * (santa.hitTimer / HIT_DURATION);
+                santa.hitTimer--;
+            }
+            
+            // Movimiento de IDLE (Respiración)
+            if (magnitude === 0 && santa.hitTimer === 0) {
+                // Desplazamiento vertical en IDLE (ciclo sinusoidal)
+                santa.y += Math.sin(gameFrame * 0.05) * 0.2; 
+                santa.frame = 0;
+            } else if (santa.hitTimer === 0) {
+                // Movimiento normal
                 const nx = santa.dirX / magnitude;
                 const ny = santa.dirY / magnitude;
                 santa.x += nx * PLAYER_SPEED;
                 santa.y += ny * PLAYER_SPEED;
                 santa.frame = (santa.frame + 0.1) % 2; 
-                santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
-                santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
-            } else {
-                 santa.frame = 0; 
             }
+
+            // Restricción de límites de pantalla
+            santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
+            santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
         }
         function updateExplosions() {
              for (let i = explosions.length - 1; i >= 0; i--) {
@@ -779,6 +797,7 @@
                 if (checkCollision(enemy, santa)) {
                     if (!santa.invincible) {
                         santa.health -= 1;
+                        santa.hitTimer = HIT_DURATION; // ACTIVA ANIMACIÓN DE GOLPE
                         explosions.push(new Explosion(enemy.x, enemy.y, 'white'));
                         playSound(150, 0.1, 'square', 100);
                         
@@ -805,10 +824,17 @@
                 // Lógica de daño al Árbol (Solo si no ha sido destruido al dañar a Santa)
                 if (!destroyed && checkCollision(enemy, tree)) {
                     tree.health -= 1;
+                    
+                    // 🔥 ACTIVACIÓN DEL GLITCH DE DAÑO
+                    tree.damageGlitchTimer = GLITCH_DURATION; 
+                    
                     enemies.splice(i, 1);
                     
                     // Añadir texto de daño al árbol
                     floatingTexts.push(new FloatingText(tree.x, tree.y - tree.size * 0.8, '-1', '#FF0000'));
+                    
+                    // ANIMACIÓN DE CHOQUE CON EL ÁRBOL (Explosión roja/oscura que simula el aplastamiento)
+                    explosions.push(new Explosion(enemy.x, enemy.y, '#990000')); 
                     
                     if (tree.health <= 0) {
                         alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
@@ -873,7 +899,7 @@
             handleShooting(deltaTime);
             updateBullets();
             updateExplosions(); 
-            updateFloatingTexts(); // AÑADIDO: Actualiza la posición y vida de los textos
+            updateFloatingTexts();
             spawnEnemies();
             updateEnemies();
             updateDialogue(deltaTime); 
@@ -883,6 +909,7 @@
             if (tree.healingGlowTimer > 0) {
                 tree.healingGlowTimer--;
             }
+            // NO TOCAR damageGlitchTimer aquí, se decrementa en drawTree
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -932,24 +959,35 @@
             const s = size; 
             const halfS = s / 2; 
             const p = s / 20; 
-            const legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15; 
+            
+            // Animación de Caminar (piernas alternando)
+            let legOffset = 0;
+            if (santa.dirX !== 0 || santa.dirY !== 0) { 
+                legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15;
+            }
 
-            // -- SOMBRERO --
-            drawRect(x + s * 0.05, y - halfS + p, s * 0.8, s * 0.3, 'red'); 
-            drawRect(x, y - halfS + p * 3, s, p * 2, 'white'); 
-            drawCircle(x + s * 0.4, y - halfS + p, s * 0.15, 'white'); 
+            // Animación de Golpeado (retroceso de torso)
+            let bodyOffset = 0;
+            if (santa.hitTimer > 0) {
+                bodyOffset = -s * 0.1; 
+            }
+
+            // --- SOMBRERO ---
+            drawRect(x + s * 0.05, y - halfS + p + bodyOffset, s * 0.8, s * 0.3, 'red'); 
+            drawRect(x, y - halfS + p * 3 + bodyOffset, s, p * 2, 'white'); 
+            drawCircle(x + s * 0.4, y - halfS + p + bodyOffset, s * 0.15, 'white'); 
 
             // -- CABEZA Y BARBA --
-            drawRect(x, y - s * 0.25, s * 0.5, s * 0.3, '#FFDBAC'); 
-            drawRect(x, y + s * 0.05, s * 0.8, s * 0.3, 'white'); 
-            drawRect(x - s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
-            drawRect(x + s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
+            drawRect(x, y - s * 0.25 + bodyOffset, s * 0.5, s * 0.3, '#FFDBAC'); 
+            drawRect(x, y + s * 0.05 + bodyOffset, s * 0.8, s * 0.3, 'white'); 
+            drawRect(x - s * 0.1, y - s * 0.3 + bodyOffset, p * 2, p * 2, 'black');
+            drawRect(x + s * 0.1, y - s * 0.3 + bodyOffset, p * 2, p * 2, 'black');
 
             // -- CUERPO --
-            drawRect(x, y + s * 0.3, s, s * 0.4, 'red');
-            drawRect(x, y + s * 0.3, s, s * 0.15, 'black');
-            drawRect(x, y + s * 0.3, s * 0.25, s * 0.2, '#FFD700'); 
-            drawRect(x, y + s * 0.55, s, p * 2, 'white');
+            drawRect(x, y + s * 0.3 + bodyOffset, s, s * 0.4, 'red');
+            drawRect(x, y + s * 0.3 + bodyOffset, s, s * 0.15, 'black');
+            drawRect(x, y + s * 0.3 + bodyOffset, s * 0.25, s * 0.2, '#FFD700'); 
+            drawRect(x, y + s * 0.55 + bodyOffset, s, p * 2, 'white');
 
             // -- PIERNAS / BOTAS --
             drawRect(x - s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); 
@@ -1021,6 +1059,15 @@
             ctx.fillText(titleText, W / 2, titleY);
 
             drawTree();
+            
+            // Reestablecer el contexto después del árbol (que tiene un reset interno)
+            if (santa.invincibleTimer > 0) {
+                 ctx.filter = 'none';
+                 ctx.globalAlpha = 1;
+                 ctx.setTransform(1, 0, 0, 1, 0, 0); 
+                 applyPsychedelicGlitch(); 
+            }
+
             drawEnemies();
             drawBullets();
             drawSanta(santa.x, santa.y, santa.size, santa.frame); 
@@ -1029,24 +1076,12 @@
             // DIBUJA LOS TEXTOS FLOTANTES
             floatingTexts.forEach(t => t.draw());
 
-            drawHUD();
-            
             // Restablecer el contexto para evitar que el HUD se vea afectado por el glitch
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.filter = 'none';
             ctx.globalAlpha = 1;
-
-            if (santa.invincibleTimer > 0) {
-                ctx.fillStyle = '#FF00FF';
-                const barWidth = 300 * (santa.invincibleTimer / POWERUP_DURATION);
-                ctx.fillRect(W / 2 - 150, H - 25, barWidth, 15);
-                drawTitleText(W/2, H-10, "INVENCIBLE", 16, '#FF00FF');
-            } else {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                const barWidth = 300 * (enemiesDefeatedSincePowerUp / ENEMIES_FOR_POWERUP);
-                ctx.fillRect(W / 2 - 150, H - 25, barWidth, 15);
-                drawTitleText(W/2, H-10, `Racha: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP}`, 16, 'white');
-            }
+            
+            drawHUD();
         }
         
         function drawTree() {
@@ -1054,6 +1089,23 @@
             const treeTop = tree.y - tree.size;
             const treeBaseY = tree.y + tree.size / 2;
             const treeW = tree.size;
+            
+            // --- NUEVO: APLICAR EFECTO GLITCH DE DAÑO ---
+            if (tree.damageGlitchTimer > 0) {
+                // Reducir el timer
+                tree.damageGlitchTimer--;
+                
+                // 1. Desplazamiento de pantalla (vibración)
+                const intensity = tree.damageGlitchTimer / GLITCH_DURATION;
+                const offsetX = Math.random() * 8 * intensity - 4 * intensity; // -4 a 4
+                const offsetY = Math.random() * 8 * intensity - 4 * intensity; 
+                
+                ctx.translate(offsetX, offsetY); 
+                
+                // 2. Filtro de color (rojo/glitch)
+                ctx.filter = `hue-rotate(${Math.random() * 30}deg) saturate(300%) contrast(150%)`;
+            }
+            // ---------------------------------------------
             
             // --- 1. Aura Iridiscente Pulsante (Basado en el HP) ---
             const hue = (gameFrame * 2) % 360; 
@@ -1099,7 +1151,7 @@
                 ctx.fill();
             }
 
-            // --- 4. Reiniciar el contexto ---
+            // --- 4. Reiniciar el contexto (Sombra/Filtro) ---
             ctx.shadowBlur = 0;
             ctx.shadowColor = 'transparent';
             
@@ -1122,13 +1174,21 @@
             drawCircle(tree.x - 10, tree.y - 15, 3, colors[(pulse + 0) % 3]);
             drawCircle(tree.x + 15, tree.y, 3, colors[(pulse + 1) % 3]);
             drawCircle(tree.x - 5, tree.y + 10, 3, colors[(pulse + 2) % 3]);
+            
+            // --- 8. Reiniciar la transformación ---
+            // Esto es CRÍTICO para que solo el árbol se vea afectado.
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.filter = 'none';
         }
 
         function drawEnemies() {
             enemies.forEach(e => {
                 const x = e.x;
                 const y = e.y;
-                const s = e.size; 
+                
+                // Animación de Movimiento/Pulsación (tamaño variable)
+                const pulse = 1 + Math.sin(gameFrame * 0.1 * e.speed) * 0.05; 
+                const s = e.size * pulse; 
                 const color = e.color; 
                 
                 // 1. Cuerpo base (Cuadrado central)
@@ -1142,10 +1202,13 @@
                 ctx.lineTo(x + s * 0.4, y - s * 0.5);
                 ctx.fill();
 
-                // 3. Glowing Evil Eyes
-                ctx.fillStyle = '#FFFF00'; 
-                ctx.fillRect(x - s * 0.3, y - s * 0.3, s * 0.15, s * 0.15); 
-                ctx.fillRect(x + s * 0.15, y - s * 0.3, s * 0.15, s * 0.15); 
+                // 3. Glowing Evil Eyes (Parpadeo)
+                const eyeBlink = Math.floor(gameFrame / 10) % 3 === 0; 
+                if (!eyeBlink) {
+                    ctx.fillStyle = '#FFFF00'; 
+                    ctx.fillRect(x - s * 0.3, y - s * 0.3, s * 0.15, s * 0.15); 
+                    ctx.fillRect(x + s * 0.15, y - s * 0.3, s * 0.15, s * 0.15); 
+                }
 
                 // 4. Sharp Teeth/Mouth
                 ctx.fillStyle = '#CCCCCC'; 
@@ -1301,14 +1364,16 @@
             santa.health = santa.maxHealth;
             santa.invincible = false;
             santa.invincibleTimer = 0;
+            santa.hitTimer = 0;
             tree.health = tree.maxHealth;
             tree.healingGlowTimer = 0; 
+            tree.damageGlitchTimer = 0; // RESET
             score = 0;
             lastHealScore = 0;
             enemies = [];
             bullets = [];
             explosions = []; 
-            floatingTexts = []; // RESET DE TEXTOS FLOTANTES
+            floatingTexts = [];
             enemiesDefeatedSincePowerUp = 0; 
             powerUpTimer = 0; 
             gameFrame = 0; 
