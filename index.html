@@ -1545,67 +1545,124 @@
         }
 
         function drawDialogueBubble(x, y, message) {
-            const FONT_SIZE = 14;
-            const MAX_WIDTH_CHARS = 25;
-            const PADDING = 8;
-            const LINE_HEIGHT = FONT_SIZE + 4;
-
+            const FONT_SIZE = 12; // Reducido de 14 a 12
+            const MAX_WIDTH = 280; // Ancho máximo en píxeles (no caracteres)
+            const MAX_LINES = 4; // Permitir hasta 4 líneas
+            const PADDING = 10;
+            const LINE_HEIGHT = FONT_SIZE + 6;
+            
             ctx.font = `${FONT_SIZE}px 'Press Start 2P', monospace`;
             ctx.textAlign = 'center';
 
-            let lines = [message];
-            let maxLineW = 0;
-
-            if (message.length > MAX_WIDTH_CHARS) {
-                const words = message.split(' ');
-                lines = [''];
-                let currentLine = 0;
-
-                for (const word of words) {
-                    if (lines[currentLine].length + word.length + 1 > MAX_WIDTH_CHARS && currentLine < 1) {
-                        currentLine++;
-                        lines.push(word + ' ');
+            // Función para dividir el texto en líneas
+            function splitTextIntoLines(text, maxWidth) {
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                for (let i = 0; i < words.length; i++) {
+                    const word = words[i];
+                    const testLine = currentLine ? `${currentLine} ${word}` : word;
+                    const testWidth = ctx.measureText(testLine).width;
+                    
+                    if (testWidth <= maxWidth) {
+                        currentLine = testLine;
                     } else {
-                        lines[currentLine] += word + ' ';
+                        // Si la línea actual no está vacía, la guardamos
+                        if (currentLine) {
+                            lines.push(currentLine);
+                        }
+                        
+                        // Si la palabra sola es más ancha que el máximo, la dividimos
+                        if (ctx.measureText(word).width > maxWidth) {
+                            // Dividir palabra larga
+                            let remainingWord = word;
+                            while (remainingWord.length > 0) {
+                                let segment = '';
+                                for (let j = 0; j < remainingWord.length; j++) {
+                                    const testSegment = segment + remainingWord[j];
+                                    if (ctx.measureText(testSegment).width <= maxWidth) {
+                                        segment = testSegment;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                lines.push(segment);
+                                remainingWord = remainingWord.slice(segment.length);
+                            }
+                            currentLine = '';
+                        } else {
+                            currentLine = word;
+                        }
                     }
                 }
+                
+                // Añadir la última línea si existe
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                
+                return lines;
             }
 
+            // Dividir el mensaje en líneas
+            let lines = splitTextIntoLines(message, MAX_WIDTH);
+            
+            // Limitar el número de líneas si es necesario
+            if (lines.length > MAX_LINES) {
+                lines = lines.slice(0, MAX_LINES);
+                lines[MAX_LINES - 1] = lines[MAX_LINES - 1].slice(0, -3) + '...';
+            }
+            
+            // Calcular el ancho máximo de línea
+            let maxLineWidth = 0;
             for (const line of lines) {
-                maxLineW = Math.max(maxLineW, ctx.measureText(line.trim()).width);
+                const lineWidth = ctx.measureText(line).width;
+                maxLineWidth = Math.max(maxLineWidth, lineWidth);
             }
-
-            const textWidth = maxLineW;
-            const numLines = lines.length;
-            const bubbleW = textWidth + PADDING * 2;
-            const bubbleH = (numLines * LINE_HEIGHT) + PADDING * 1.5;
+            
+            const bubbleW = Math.min(maxLineWidth + PADDING * 2, MAX_WIDTH + PADDING * 2);
+            const bubbleH = (lines.length * LINE_HEIGHT) + PADDING * 2;
 
             const bubbleX = x - bubbleW / 2;
-            const bubbleY = y - santa.size - bubbleH - 10;
+            const bubbleY = y - santa.size - bubbleH - 15;
 
-            // Caja de texto con fondo oscuro y borde brillante
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'; // Fondo oscuro casi negro
+            // Fondo blanco con borde negro
+            ctx.fillStyle = 'white';
             ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
-
-            // Punta del diálogo
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-            ctx.beginPath();
-            ctx.moveTo(x - 5, bubbleY + bubbleH);
-            ctx.lineTo(x + 5, bubbleY + bubbleH);
-            ctx.lineTo(x, bubbleY + bubbleH + 6);
-            ctx.closePath();
-            ctx.fill();
-
-            // Borde del cuadro de diálogo
-            ctx.strokeStyle = '#00FFFF'; // Color cian brillante
-            ctx.lineWidth = 2;
+            
+            // Borde negro grueso
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
             ctx.strokeRect(bubbleX, bubbleY, bubbleW, bubbleH);
 
-            ctx.fillStyle = '#00FFFF'; // Color del texto (Cian)
-            let currentTextY = bubbleY + PADDING + LINE_HEIGHT * 0.75;
+            // Punta del diálogo (triángulo en la parte inferior)
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(x - 8, bubbleY + bubbleH);
+            ctx.lineTo(x + 8, bubbleY + bubbleH);
+            ctx.lineTo(x, bubbleY + bubbleH + 10);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Borde de la punta
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - 8, bubbleY + bubbleH);
+            ctx.lineTo(x + 8, bubbleY + bubbleH);
+            ctx.lineTo(x, bubbleY + bubbleH + 10);
+            ctx.closePath();
+            ctx.stroke();
 
+            // Texto negro
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'center';
+            
+            // Dibujar cada línea centrada
             lines.forEach((line, index) => {
-                ctx.fillText(line.trim(), x, currentTextY + index * LINE_HEIGHT);
+                const textY = bubbleY + PADDING + (index * LINE_HEIGHT) + FONT_SIZE;
+                ctx.fillText(line, x, textY);
             });
         }
 
