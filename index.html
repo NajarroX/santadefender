@@ -194,15 +194,40 @@
         let powerUpTimer = 0; 
         
         let dialogue = {
-            message: "¡Feliz Navidad, mis pequeños capitalistas!",
+            // **FRASE INICIAL ANTI-CAPITALISTA**
+            message: "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.",
             duration: PHRASE_DURATION 
         };
 
-        const invincibilityPhrase = "¡Soy invencible, como el espíritu capitalista... por un momento!";
+        // **FRASE DE INVENCIBILIDAD ANTI-CAPITALISTA**
+        const invincibilityPhrase = "¡Fuera de aquí, parásitos capitalistas!";
+        
+        // **FRASES SARCÁSTICAS Y CRÍTICAS AL CAPITALISMO**
         const sarcasticPhrases = [
-            { min: 40, phrases: ["¡No me cansaré hasta que mis nietos hereden el negocio!", "¡Este traje es de marca, no lo ensucies!", "¡El valor de mercado de este pino es astronómico!", "¡Estos muchachos son peores que el tráfico en Black Friday!", "¡La codicia no los hace inmortales, chicos!"] },
-            { min: 25, phrases: ["¿De verdad? ¿Solo un arbolito? ¡Qué falta de ambición!", "¡Un poco de dolor hará que aprecien más la Navidad.", "¡Pagaría por un café con estos niveles de adrenalina!", "¡Mis elfos son más eficientes que esta fuerza de trabajo!", "¡Deberían estar invirtiendo en protección, no en deforestación!"] },
-            { min: 1, phrases: ["¡Parece que vamos a necesitar un plan B... o un nuevo árbol!", "¡Mi seguro de vida cubre esto, ¿verdad?!", "¡Alguien va a pasar la Navidad en la lista negra!", "¡Si sobrevivo, subiré el precio de los juguetes en un 200%!", "¡Al menos es mejor que la reunión de la junta directiva de enero!"] }
+            // Árbol con ALTA salud (40+ HP): Sarcasmo sobre la estabilidad y la codicia
+            { min: 40, phrases: [
+                "¡Luchando por el árbol, el único bien público que queda en pie!", 
+                "¡Mis elfos no tienen sindicato, son la verdadera tragedia aquí, no estos demonios!", 
+                "¡La avaricia ha creado monstruos... literalmente! ¡Que ironía!", 
+                "¡El precio de la hora extra es lo que realmente duele, no sus mordiscos!", 
+                "¡Defender este árbol es la nueva 'responsabilidad social corporativa'!"
+            ] },
+            // Árbol con SALUD MEDIA (25+ HP): Crítica al sistema y el esfuerzo
+            { min: 25, phrases: [
+                "¿En serio? ¿Tantos enemigos y la riqueza sigue concentrada en los de arriba?", 
+                "¡Esto es lo que pasa cuando privatizas el Polo Norte!", 
+                "¡No hay suficientes incentivos fiscales para seguir con esta masacre!", 
+                "¡Al menos estos monstruos trabajan, a diferencia de los parásitos de la junta directiva!", 
+                "¡Mi nómina está congelada, pero mi furia no!"
+            ] },
+            // Árbol con BAJA salud (1+ HP): Humor negro y desesperación
+            { min: 1, phrases: [
+                "¡La recesión de salud llegó antes de lo esperado! ¡Sálvese quien pueda!", 
+                "¡Parece que el mercado se está 'ajustando' a la baja, justo como mi moral!", 
+                "¡Si perdemos, que el árbol se declare en bancarrota para salvar mis activos!", 
+                "¡La próxima Navidad, los juguetes serán hechos por la IA... y serán aún más caros!", 
+                "¡El verdadero regalo es un sistema que funcione, no más juguetes!"
+            ] }
         ];
 
         let timeSinceLastPhrase = 0;
@@ -212,6 +237,92 @@
         const masterGain = audioContext.createGain();
         masterGain.connect(audioContext.destination);
         let isMuted = false;
+        let backgroundMusicSource = null; 
+
+        // Frecuencias MIDI para "Jingle Bells" (en G Mayor)
+        const C4 = 261.63, D4 = 293.66, E4 = 329.63, F4 = 349.23, G4 = 392.00, A4 = 440.00; 
+        const C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99;
+        
+        // NOTAS: 1.0 = Negra; 0.5 = Corchea; 2.0 = Blanca
+        const tempo = 0.25; 
+
+        // Melodía precisa de "Jingle Bells" (Verso y Estribillo, 16 compases en 2/4)
+        const melody = [
+            // Verso (Compases 1-8: Dashing through the snow...)
+            { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 }, 
+            { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
+            { freq: E4, duration: 0.5 }, { freq: G4, duration: 0.5 }, { freq: C4, duration: 0.5 }, { freq: D4, duration: 0.5 },
+            { freq: E4, duration: 2.0 }, 
+            { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 },
+            { freq: F4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.25 }, { freq: D4, duration: 0.25 },
+            { freq: D4, duration: 0.5 }, { freq: D4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: D4, duration: 0.5 },
+            { freq: G4, duration: 2.0 }, 
+
+            // Estribillo (Compases 9-16: Jingle Bells, jingle bells...)
+            { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
+            { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 1.0 },
+            { freq: E4, duration: 0.5 }, { freq: G4, duration: 0.5 }, { freq: C4, duration: 0.5 }, { freq: D4, duration: 0.5 },
+            { freq: E4, duration: 2.0 }, 
+            { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 }, { freq: F4, duration: 0.5 },
+            { freq: F4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.5 }, { freq: E4, duration: 0.25 }, { freq: D4, duration: 0.25 },
+            { freq: G4, duration: 0.5 }, { freq: G4, duration: 0.5 }, { freq: F4, duration: 0.5 }, { freq: D4, duration: 0.5 },
+            { freq: C4, duration: 2.0 } 
+        ];
+
+
+        function startBackgroundMusic() {
+            if (backgroundMusicSource) {
+                if (backgroundMusicSource.playbackState === backgroundMusicSource.PLAYING_STATE) {
+                    try { backgroundMusicSource.stop(audioContext.currentTime); } catch (e) {}
+                }
+                backgroundMusicSource = null;
+            }
+
+            const playSequence = (time) => {
+                if (gameState !== 'PLAYING' || isMuted) {
+                    backgroundMusicSource = null;
+                    return;
+                }
+                
+                let currentTime = time;
+                
+                backgroundMusicSource = audioContext.createOscillator();
+                backgroundMusicSource.type = 'square'; 
+
+                const musicGain = audioContext.createGain();
+                musicGain.gain.setValueAtTime(0.4, audioContext.currentTime); 
+                
+                backgroundMusicSource.connect(musicGain);
+                musicGain.connect(masterGain); 
+
+                melody.forEach(note => {
+                    const duration = note.duration * tempo; 
+                    
+                    if (note.freq > 0) {
+                         backgroundMusicSource.frequency.setValueAtTime(note.freq, currentTime);
+                         musicGain.gain.setValueAtTime(0.4, currentTime);
+                         musicGain.gain.exponentialRampToValueAtTime(0.0001, currentTime + duration * 0.95);
+                    } else {
+                         musicGain.gain.setValueAtTime(0.0001, currentTime);
+                    }
+                    
+                    currentTime += duration;
+                });
+                
+                backgroundMusicSource.start(time);
+                backgroundMusicSource.stop(currentTime); 
+                
+                backgroundMusicSource.onended = () => {
+                    if (gameState === 'PLAYING' && !isMuted) {
+                        playSequence(audioContext.currentTime);
+                    } else {
+                         backgroundMusicSource = null; 
+                    }
+                };
+            };
+            
+            playSequence(audioContext.currentTime);
+        }
 
         /**
          * Genera un efecto de sonido simple de 8 bits.
@@ -254,20 +365,34 @@
         function toggleAudio() {
             isMuted = !isMuted;
             if (isMuted) {
+                // Silenciar el MasterGain para detener MÚSICA y EFECTOS
                 masterGain.gain.setValueAtTime(0, audioContext.currentTime);
                 audioToggle.textContent = '🔇';
+                
+                // Detener la reproducción del loop actual explícitamente si está activo
+                if (backgroundMusicSource) {
+                     try { backgroundMusicSource.stop(audioContext.currentTime); } catch (e) {}
+                     backgroundMusicSource = null;
+                }
+                
             } else {
+                // Reactivar el MasterGain y reintentar la música
                 masterGain.gain.setValueAtTime(1, audioContext.currentTime);
                 audioToggle.textContent = '🔊';
+                
+                // Si la música estaba detenida debido al mute, la reiniciamos
+                if (gameState === 'PLAYING' && !backgroundMusicSource) {
+                     startBackgroundMusic();
+                }
             }
         }
         
         audioToggle.addEventListener('click', toggleAudio);
         
-        // --- Listener para el atajo de teclado TAB (NUEVO) ---
+        // --- Listener para el atajo de teclado TAB ---
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Tab' && gameState === 'PLAYING') {
-                e.preventDefault(); // Evita que el foco salte
+                e.preventDefault();
                 toggleAudio();
             }
         });
@@ -339,10 +464,15 @@
         
         function handleStartGame() {
             if (gameState === 'TITLE') {
+                audioContext.resume();
+                
                 playSound(440, 0.01, 'sine', 440, 0); 
-
+                
                 gameState = 'PLAYING';
                 resetGame();
+                
+                startBackgroundMusic(); // INICIA LA MÚSICA
+
                 if (isMobile) {
                     controls.style.display = 'block';
                     shootButton.style.display = 'flex';
@@ -363,7 +493,6 @@
         let keys = {};
         if (!isMobile) {
             window.addEventListener('keydown', (e) => {
-                // Control de movimiento
                 if (gameState === 'PLAYING') {
                     keys[e.code] = true;
                 }
@@ -371,7 +500,6 @@
             window.addEventListener('keyup', (e) => {
                 if (gameState === 'PLAYING') {
                     keys[e.code] = false;
-                    // Asegurar que el disparo se detenga si se suelta espacio
                     if (e.code === 'Space') santa.shooting = false; 
                 }
             });
@@ -509,7 +637,7 @@
                 santa.invincibleTimer = POWERUP_DURATION; 
                 
                 enemiesDefeatedSincePowerUp = 0; 
-                dialogue.message = invincibilityPhrase;
+                dialogue.message = invincibilityPhrase; // Usa la nueva frase anti-capitalista
                 dialogue.duration = PHRASE_DURATION;
                 playSound(300, 0.2, 'sawtooth', 700);
             }
@@ -845,21 +973,69 @@
         }
         
         function drawDialogueBubble(x, y, message) {
-            const padding = 10;
-            ctx.font = '16px monospace';
-            const textMetrics = ctx.measureText(message);
-            const textWidth = textMetrics.width;
-            const textHeight = 16;
-            const bubbleW = textWidth + padding * 2;
-            const bubbleH = textHeight + padding * 2;
+            const FONT_SIZE = 16;
+            const MAX_WIDTH_CHARS = 25; // Caracteres máximos por línea
+            const PADDING = 8;
+            const LINE_HEIGHT = FONT_SIZE + 4;
+            
+            ctx.font = `${FONT_SIZE}px monospace`;
+            ctx.textAlign = 'center';
+
+            // 1. Envolver el texto
+            let lines = [message];
+            let maxLineW = 0;
+            
+            // Simulación de auto-envoltura simple
+            if (message.length > MAX_WIDTH_CHARS) {
+                const words = message.split(' ');
+                lines = [''];
+                let currentLine = 0;
+                
+                for (const word of words) {
+                    // Si añadir la palabra actual supera el límite, crea una nueva línea
+                    if (lines[currentLine].length + word.length + 1 > MAX_WIDTH_CHARS && currentLine < 1) {
+                        currentLine++;
+                        lines.push(word + ' ');
+                    } else {
+                        lines[currentLine] += word + ' ';
+                    }
+                }
+            }
+
+            // 2. Medir el ancho máximo de línea
+            for (const line of lines) {
+                maxLineW = Math.max(maxLineW, ctx.measureText(line.trim()).width);
+            }
+
+            const textWidth = maxLineW;
+            const numLines = lines.length;
+            const bubbleW = textWidth + PADDING * 2;
+            const bubbleH = (numLines * LINE_HEIGHT) + PADDING * 1.5;
+            
             const bubbleX = x - bubbleW / 2;
-            const bubbleY = y - santa.size - bubbleH - 5; 
+            const bubbleY = y - santa.size - bubbleH - 10; // 10px de separación
+
+            // 3. Dibujar el Globo (Rectángulo redondeado)
             ctx.fillStyle = 'white';
             ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
+            
+            // 4. Dibujar el Pico (Triángulo que apunta a Santa)
+            ctx.beginPath();
+            ctx.moveTo(x - 5, bubbleY + bubbleH);
+            ctx.lineTo(x + 5, bubbleY + bubbleH);
+            ctx.lineTo(x, bubbleY + bubbleH + 6); // 6px de altura del pico
+            ctx.closePath();
+            ctx.fill();
+
+            // 5. Dibujar el Texto
             ctx.fillStyle = 'black';
-            ctx.textAlign = 'center';
-            ctx.fillText(message, x, bubbleY + textHeight + padding - 2);
+            let currentTextY = bubbleY + PADDING + LINE_HEIGHT * 0.75;
+            
+            lines.forEach((line, index) => {
+                ctx.fillText(line.trim(), x, currentTextY + index * LINE_HEIGHT);
+            });
         }
+
 
         function drawHUD() {
             ctx.fillStyle = 'white';
@@ -913,6 +1089,12 @@
         }
 
         function resetGame() {
+            // Detener la música si existe
+            if (backgroundMusicSource) {
+                try { backgroundMusicSource.stop(); } catch (e) {}
+                backgroundMusicSource = null;
+            }
+            
             santa.x = BASE_W / 2;
             santa.y = BASE_H / 2;
             santa.frame = 0;
@@ -927,7 +1109,8 @@
             explosions = []; 
             enemiesDefeatedSincePowerUp = 0; 
             powerUpTimer = 0; 
-            dialogue.message = "¡Feliz Navidad, mis pequeños capitalistas!";
+            // Usa la nueva frase inicial
+            dialogue.message = "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'."; 
             dialogue.duration = PHRASE_DURATION;
             timeSinceLastPhrase = 0;
         }
