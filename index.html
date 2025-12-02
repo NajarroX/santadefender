@@ -156,9 +156,10 @@
         ];
         let spawnRate = 0.02;
 
-        // --- HITO DE PUNTUACIÓN ---
+        // --- HITO DE PUNTUACIÓN Y CURACIÓN ---
         const HEAL_SCORE_HIT = 1000;
         let lastHealScore = 0;
+        const GLOW_DURATION = 30; // 30 frames para el destello de curación (0.5 segundos)
 
         // --- 2. OBJETOS DEL JUEGO Y ESTADO ---
         let santa = {
@@ -178,13 +179,14 @@
             invincibleTimer: 0 
         };
 
-        const tree = {
+        let tree = {
             x: BASE_W / 2,
             y: BASE_H / 2,
             size: 40,
             color: '#00aa00', 
             health: 50,
-            maxHealth: 50
+            maxHealth: 50,
+            healingGlowTimer: 0 // Nuevo temporizador para el glow
         };
         const treeHealthMax = tree.maxHealth;
 
@@ -194,6 +196,7 @@
         let score = 0;
         let enemiesDefeatedSincePowerUp = 0; 
         let powerUpTimer = 0; 
+        let gameFrame = 0; // Nuevo contador de frames para la animación
         
         let dialogue = {
             // **FRASE INICIAL ANTI-CAPITALISTA**
@@ -663,12 +666,16 @@
                 lastHealScore += HEAL_SCORE_HIT;
 
                 const healAmount = tree.maxHealth * 0.5;
+                const oldHealth = tree.health;
                 const newHealth = Math.min(tree.maxHealth, tree.health + healAmount);
                 
-                if (newHealth > tree.health) {
+                if (newHealth > oldHealth) {
                     tree.health = newHealth;
                     dialogue.message = `¡HITO! El árbol se ha regenerado un 50%. HP: ${tree.health}`;
                     dialogue.duration = PHRASE_DURATION;
+                    
+                    // Activa el glow de curación
+                    tree.healingGlowTimer = GLOW_DURATION; 
                     
                     playHealSound();
                 }
@@ -852,6 +859,12 @@
             updateEnemies();
             updateDialogue(deltaTime); 
             checkHealHit();
+            
+            // Actualiza el contador de frames y el glow de curación
+            gameFrame++; 
+            if (tree.healingGlowTimer > 0) {
+                tree.healingGlowTimer--;
+            }
         }
 
         // --- 6. RENDERIZADO (DRAW) ---
@@ -867,20 +880,54 @@
             ctx.fill();
         }
 
+        /**
+         * Dibuja a Santa con detalles de 8 bits.
+         */
         function drawSanta(x, y, size, frame) {
             if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
                 return;
             }
 
-            const legOffset = (Math.floor(frame) === 0) ? 3 : -3;
-            drawRect(x, y, size, size, 'red');
-            drawRect(x, y + 4, size, size / 2, 'white'); 
-            drawRect(x, y - 8, size / 2, size / 2, 'white'); 
-            drawRect(x, y - 10, size, size / 3, 'red'); 
-            drawRect(x - 5, y - 2, 3, 3, 'black');
-            drawRect(x + 5, y - 2, 3, 3, 'black');
-            drawRect(x - 5 + legOffset, y + 8, 4, 4, 'black');
-            drawRect(x + 5 - legOffset, y + 8, 4, 4, 'black');
+            const s = size; // 20
+            const halfS = s / 2; // 10
+            const p = s / 20; // 1 (pixel unit)
+            // Offset para la animación de caminar
+            const legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15; // 3 or -3
+
+            // -- SOMBRERO --
+            // Hat (Red triangle/box)
+            drawRect(x + s * 0.05, y - halfS + p, s * 0.8, s * 0.3, 'red'); 
+            // White Trim
+            drawRect(x, y - halfS + p * 3, s, p * 2, 'white'); 
+            // Pom pom tip
+            drawCircle(x + s * 0.4, y - halfS + p, s * 0.15, 'white'); 
+
+            // -- CABEZA Y BARBA --
+            // Face (Skin)
+            drawRect(x, y - s * 0.25, s * 0.5, s * 0.3, '#FFDBAC'); 
+            
+            // Beard (White) - Main body
+            drawRect(x, y + s * 0.05, s * 0.8, s * 0.3, 'white'); 
+            
+            // Eyes (Small black dots on the face)
+            drawRect(x - s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
+            drawRect(x + s * 0.1, y - s * 0.3, p * 2, p * 2, 'black');
+
+            // -- CUERPO --
+            // Body (Red Jacket)
+            drawRect(x, y + s * 0.3, s, s * 0.4, 'red');
+
+            // Belt (Black with Gold Buckle)
+            drawRect(x, y + s * 0.3, s, s * 0.15, 'black');
+            drawRect(x, y + s * 0.3, s * 0.25, s * 0.2, '#FFD700'); // Buckle
+            
+            // White Fur Trim (Jacket Bottom)
+            drawRect(x, y + s * 0.55, s, p * 2, 'white');
+
+            // -- PIERNAS / BOTAS --
+            // Boots (Black)
+            drawRect(x - s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); // Left
+            drawRect(x + s * 0.2 + legOffset, y + s * 0.65, s * 0.2, s * 0.3, 'black'); // Right
         }
 
         function drawTitleText(x, y, message, fontSize, color, align = 'center') {
@@ -970,28 +1017,94 @@
             }
         }
         
+        /**
+         * Dibuja el árbol con aura y luces animadas.
+         */
         function drawTree() {
-            drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
-            ctx.fillStyle = tree.color;
+            const healthRatio = tree.health / tree.maxHealth;
+            const treeTop = tree.y - tree.size;
+            const treeBaseY = tree.y + tree.size / 2;
+            const treeW = tree.size;
+            
+            // --- 1. Aura de Protección (Baja con el HP) ---
+            const maxAuraSize = 25;
+            const auraSize = maxAuraSize * healthRatio;
+            const alpha = 0.5 * healthRatio; 
+            
+            ctx.fillStyle = `rgba(100, 255, 100, ${alpha})`;
             ctx.beginPath();
-            ctx.moveTo(tree.x, tree.y - tree.size); 
-            ctx.lineTo(tree.x - tree.size, tree.y + tree.size / 2);
-            ctx.lineTo(tree.x + tree.size, tree.y + tree.size / 2);
+            ctx.moveTo(tree.x, treeTop - auraSize); 
+            ctx.lineTo(tree.x - treeW - auraSize, treeBaseY + auraSize);
+            ctx.lineTo(tree.x + treeW + auraSize, treeBaseY + auraSize);
             ctx.closePath();
             ctx.fill();
-            drawCircle(tree.x - 10, tree.y - 15, 3, 'yellow');
-            drawCircle(tree.x + 15, tree.y, 3, 'red');
-            drawCircle(tree.x - 5, tree.y + 10, 3, 'blue');
-            ctx.fillStyle = 'white';
-            ctx.font = '14px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(`HP: ${tree.health}/${tree.maxHealth}`, tree.x, tree.y + tree.size + 10);
+
+            // Si hay curación, añade un glow pulsante
+            if (tree.healingGlowTimer > 0) {
+                const glowRatio = tree.healingGlowTimer / GLOW_DURATION;
+                const glowAlpha = Math.sin(Math.PI * (1 - glowRatio)); 
+                ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha * 0.8})`; 
+                ctx.beginPath();
+                ctx.moveTo(tree.x, treeTop - auraSize - 5); 
+                ctx.lineTo(tree.x - treeW - auraSize - 5, treeBaseY + auraSize + 5);
+                ctx.lineTo(tree.x + treeW + auraSize + 5, treeBaseY + auraSize + 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // --- 2. Tronco ---
+            drawRect(tree.x, tree.y + tree.size / 2 - 5, 10, 10, '#8B4513');
+            
+            // --- 3. Cuerpo del Árbol ---
+            ctx.fillStyle = tree.color;
+            ctx.beginPath();
+            ctx.moveTo(tree.x, treeTop); 
+            ctx.lineTo(tree.x - treeW, treeBaseY);
+            ctx.lineTo(tree.x + treeW, treeBaseY);
+            ctx.closePath();
+            ctx.fill();
+            
+            // --- 4. Luces Animadas ---
+            const pulse = Math.floor(gameFrame / 10) % 3; // 3 fases de animación
+            const colors = ['yellow', 'red', 'blue'];
+            
+            // Ornamento 1 (Arriba, 0, 3, 6, ...)
+            drawCircle(tree.x - 10, tree.y - 15, 3, colors[(pulse + 0) % 3]);
+            // Ornamento 2 (Medio, 1, 4, 7, ...)
+            drawCircle(tree.x + 15, tree.y, 3, colors[(pulse + 1) % 3]);
+            // Ornamento 3 (Abajo, 2, 5, 8, ...)
+            drawCircle(tree.x - 5, tree.y + 10, 3, colors[(pulse + 2) % 3]);
         }
 
+        /**
+         * Dibuja a los enemigos con detalle: cuerpo cuadrado, cuernos y ojos brillantes.
+         */
         function drawEnemies() {
             enemies.forEach(e => {
-                drawRect(e.x, e.y, e.size, e.size, e.color);
-                drawRect(e.x + e.size / 4, e.y + e.size / 4, e.size / 3, e.size / 3, 'black'); 
+                const x = e.x;
+                const y = e.y;
+                const s = e.size; // 15
+                const color = e.color; 
+                
+                // 1. Cuerpo base (Cuadrado central)
+                ctx.fillStyle = color;
+                ctx.fillRect(x - s / 2, y - s / 2, s, s);
+
+                // 2. Head Spikes/Horns (Puntas/Cuernos)
+                ctx.beginPath();
+                ctx.moveTo(x - s * 0.4, y - s * 0.5);
+                ctx.lineTo(x, y - s * 0.8); // Pico central
+                ctx.lineTo(x + s * 0.4, y - s * 0.5);
+                ctx.fill();
+
+                // 3. Glowing Evil Eyes (Amarillo o Rojo, más pequeños)
+                ctx.fillStyle = '#FFFF00'; 
+                ctx.fillRect(x - s * 0.3, y - s * 0.3, s * 0.15, s * 0.15); // Izquierdo
+                ctx.fillRect(x + s * 0.15, y - s * 0.3, s * 0.15, s * 0.15); // Derecho
+
+                // 4. Sharp Teeth/Mouth (Boca simple)
+                ctx.fillStyle = '#CCCCCC'; 
+                ctx.fillRect(x - s * 0.2, y + s * 0.1, s * 0.4, s * 0.1); 
             });
         }
         function drawBullets() {
@@ -1073,22 +1186,49 @@
             ctx.textAlign = 'left';
             ctx.fillText(`Puntuación: ${score}`, 10, 30);
             
-            // Salud Santa (Esquina superior derecha) - AHORA CON BARRA
-            const healthRatio = santa.health / santa.maxHealth;
-            const barWidth = 150;
+            // --- BARRA DE SALUD DEL ÁRBOL (Superior Central) ---
+            const treeHealthRatio = tree.health / tree.maxHealth;
+            const barWidth = 300;
             const barHeight = 15;
-            const barX = W - barWidth - 10;
+            const barX = W / 2 - barWidth / 2;
             const barY = 15;
+            
+            // Glow de curación (si está activo)
+            if (tree.healingGlowTimer > 0) {
+                const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.5;
+                ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha})`;
+                ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
+            }
 
-            ctx.strokeStyle = 'white';
+            // Marco de la barra
+            ctx.strokeStyle = '#00aa00';
             ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-            ctx.fillStyle = healthRatio > 0.5 ? '#00FF00' : (healthRatio > 0.2 ? '#FFD700' : '#FF0000');
-            ctx.fillRect(barX, barY, barWidth * healthRatio, barHeight);
+            // Relleno de la barra (Rojo a Verde)
+            ctx.fillStyle = treeHealthRatio > 0.5 ? '#00FF00' : (treeHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
+            ctx.fillRect(barX, barY, barWidth * treeHealthRatio, barHeight);
+
+            // Texto de salud del árbol
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText(`ÁRBOL: ${tree.health}/${tree.maxHealth}`, W / 2, barY + barHeight + 20);
+
+            // --- BARRA DE SALUD DE SANTA (Superior Derecha) ---
+            const santaHealthRatio = santa.health / santa.maxHealth;
+            const santaBarWidth = 150;
+            const santaBarHeight = 15;
+            const santaBarX = W - santaBarWidth - 10;
+            const santaBarY = 15;
+
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
+
+            ctx.fillStyle = santaHealthRatio > 0.5 ? '#00FF00' : (santaHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
+            ctx.fillRect(santaBarX, santaBarY, santaBarWidth * santaHealthRatio, santaBarHeight);
 
             ctx.fillStyle = 'white';
             ctx.textAlign = 'right';
-            ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30);
+            ctx.fillText(`Santa: ${santa.health}/${santa.maxHealth}`, W - 10, 30 + santaBarHeight + 5);
             
             // Diálogo (si está activo, encima de Santa)
             if (dialogue.duration > 0) {
@@ -1130,6 +1270,7 @@
             santa.invincible = false;
             santa.invincibleTimer = 0;
             tree.health = tree.maxHealth;
+            tree.healingGlowTimer = 0; // Reset del glow
             score = 0;
             lastHealScore = 0;
             enemies = [];
@@ -1137,6 +1278,7 @@
             explosions = []; 
             enemiesDefeatedSincePowerUp = 0; 
             powerUpTimer = 0; 
+            gameFrame = 0; // Reset del contador de frames
             
             dialogue.message = "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'."; 
             dialogue.duration = PHRASE_DURATION;
