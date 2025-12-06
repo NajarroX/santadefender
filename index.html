@@ -18,7 +18,6 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    /* CLAVE: Usamos 100dvh para respetar las barras de navegación de los in-app browsers */
     height: 100dvh;
     font-family: 'Press Start 2P', monospace;
     position: relative;
@@ -50,9 +49,11 @@ body {
     background-size: 150px 150px, 150px 150px;
     animation: movePattern 20s linear infinite;
 }
+
 .background-pattern.paused {
     animation-play-state: paused;
 }
+
 @keyframes movePattern {
     from { background-position: 0 0, 0 0; }
     to { background-position: 150px 150px, 150px 150px; }
@@ -103,17 +104,15 @@ body {
 
 /* --- Contenedor de elementos HTML de la Portada (ABSOLUTE EN EL BODY) --- */
 .title-elements-container {
-    /* CLAVE: Posición absoluta en el body */
     position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
-    /* CLAVE: min-height: 100% para cubrir el body (que usa 100dvh) */
     min-height: 100%;
     z-index: 20;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Dejamos que el spacer empuje */
+    justify-content: flex-start;
     align-items: center;
     pointer-events: none;
     padding: 5vh 0 0;
@@ -128,13 +127,11 @@ body {
 /* Contenedor para el Botón y las Instrucciones */
 #controlArea {
     pointer-events: auto;
-    /* CLAVE: Usamos posición absoluta para forzar el bottom en el viewport */
     position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    /* CLAVE: Espacio de 40px de la orilla inferior en PC/Grande */
     bottom: 40px;
 }
 
@@ -157,6 +154,7 @@ body {
     z-index: 20;
     transition: all 0.1s ease;
 }
+
 #startButton:active {
     box-shadow: 0 2px 0 #FF3333, 0 5px 0 #990000;
     transform: translateY(3px);
@@ -179,6 +177,7 @@ body {
     margin-bottom: 15px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
 }
+
 #instructions h3 {
     margin-top: 0;
     color: #CC0000;
@@ -186,9 +185,119 @@ body {
     border-bottom: 1px dashed #CC0000;
     padding-bottom: 5px;
 }
+
 #instructions p {
     margin: 5px 0;
     text-shadow: 1px 1px 2px black;
+}
+
+/* --- NUEVO: Modal personalizado para Game Over con Premios --- */
+#gameOverModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameOverContent {
+    background: linear-gradient(145deg, #006600, #004400);
+    border: 8px solid #CC0000;
+    padding: 40px;
+    text-align: center;
+    max-width: 700px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(255, 0, 0, 0.7);
+    position: relative;
+}
+
+#gameOverContent::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+    border: 4px solid #FFD700;
+    z-index: -1;
+}
+
+#gameOverTitle {
+    color: #FFD700;
+    font-size: 36px;
+    margin-bottom: 20px;
+    text-shadow: 4px 4px 0 #000, 0 0 15px #FF0000;
+}
+
+#gameOverMessage {
+    color: #FFFFFF;
+    font-size: 18px;
+    margin-bottom: 25px;
+    line-height: 1.6;
+    text-shadow: 2px 2px 0 #000;
+}
+
+#gameOverScore {
+    color: #00FFFF;
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-shadow: 3px 3px 0 #000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border: 3px solid #FFD700;
+}
+
+#premiumButtonContainer {
+    margin: 30px 0;
+}
+
+.premium-download-button {
+    display: inline-block;
+    padding: 20px 35px;
+    background: linear-gradient(145deg, #CC0000, #990000);
+    color: #FFFF00;
+    border: 5px solid #000;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 8px 0 #660000, 0 12px 0 #000;
+    text-shadow: 3px 3px 0 #000;
+    margin: 10px;
+}
+
+.premium-download-button:hover {
+    background: linear-gradient(145deg, #FF0000, #CC0000);
+    transform: translateY(-5px);
+    box-shadow: 0 13px 0 #660000, 0 17px 0 #000;
+}
+
+.premium-download-button:active {
+    transform: translateY(5px);
+    box-shadow: 0 3px 0 #660000, 0 7px 0 #000;
+}
+
+#restartButton {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: #333333;
+    color: #FFFFFF;
+    border: 4px solid #FFD700;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#restartButton:hover {
+    background: #555555;
+    transform: scale(1.05);
 }
 
 /* --- RESPONSIVE GENERAL (Max 800px) --- */
@@ -200,29 +309,54 @@ body {
             -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000,
             0 0 8px #FF0000;
     }
+    
     .title-elements-container {
         padding: 2vh 0 0;
     }
+    
     #controlArea {
-        /* CLAVE: Espacio de 30px de la orilla inferior en tablet/móvil horizontal */
         bottom: 30px;
     }
+    
     #startButton {
         font-size: 20px;
         padding: 10px 20px;
         box-shadow: 0 4px 0 #FF3333, 0 6px 0 #990000;
     }
+    
     #instructions {
         font-size: 10px;
         max-width: 90%;
     }
+    
     #instructions h3 {
         font-size: 14px;
     }
-    /* Ajuste de AudioToggle en móvil */
+    
     #audioToggle {
         font-size: 16px;
         padding: 5px 8px;
+    }
+    
+    #gameOverContent {
+        padding: 25px;
+    }
+    
+    #gameOverTitle {
+        font-size: 24px;
+    }
+    
+    #gameOverMessage {
+        font-size: 14px;
+    }
+    
+    #gameOverScore {
+        font-size: 18px;
+    }
+    
+    .premium-download-button {
+        padding: 15px 25px;
+        font-size: 12px;
     }
 }
 
@@ -232,49 +366,71 @@ body {
         font-size: 32px;
         top: 10px;
     }
+    
     .title-elements-container {
         padding: 1vh 0 0;
     }
+    
     #controlArea {
-        /* CLAVE: Espacio de 20px en móvil vertical para máxima seguridad */
         bottom: 20px;
     }
+    
     #instructions {
         padding: 5px;
         font-size: 9px;
     }
+    
     #instructions h3 {
         font-size: 12px;
     }
-    /* Ajuste de AudioToggle en móvil vertical */
+    
     #audioToggle {
         font-size: 14px;
         padding: 4px 6px;
     }
+    
+    #gameOverContent {
+        padding: 20px;
+    }
+    
+    #gameOverTitle {
+        font-size: 20px;
+    }
+    
+    #gameOverMessage {
+        font-size: 12px;
+    }
+    
+    #gameOverScore {
+        font-size: 16px;
+    }
+    
+    .premium-download-button {
+        padding: 12px 20px;
+        font-size: 10px;
+    }
 }
-
-/* --- Control de Audio y Controles Táctiles (Mejora Visual) --- */
 
 /* --- Control de Audio --- */
 #audioToggle {
     position: fixed;
-    top: 15px; /* Más espacio arriba */
-    left: 15px; /* Más espacio a la izquierda */
+    top: 15px;
+    left: 15px;
     z-index: 40;
-    /* Nuevo Estilo Retro */
     background: #000;
-    color: #FFD700; /* Oro */
-    border: 4px solid #CC0000; /* Borde rojo grueso */
-    box-shadow: 0 0 10px #FF0000; /* Brillo */
-    border-radius: 0; /* Cuadrado */
+    color: #FFD700;
+    border: 4px solid #CC0000;
+    box-shadow: 0 0 10px #FF0000;
+    border-radius: 0;
     padding: 8px 12px;
     font-size: 20px;
     cursor: pointer;
     user-select: none;
     display: none;
     pointer-events: auto;
-    font-family: 'Press Start 2P', monospace; /* Aplicamos la fuente retro */
+    font-family: 'Press Start 2P', monospace;
 }
+
 #audioToggle:active {
     transform: scale(0.95);
 }
@@ -287,29 +443,30 @@ body {
     display: none;
     pointer-events: auto;
 }
+
 .joystick-container {
     width: 150px;
     height: 150px;
     border-radius: 50%;
-    /* Estilo Retro - Más sólido y brillante */
-    background-color: rgba(34, 34, 34, 0.7); /* Gris oscuro */
+    background-color: rgba(34, 34, 34, 0.7);
     border: 3px solid #FFD700;
     box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
 }
+
 .joystick-handle {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    /* Estilo Retro - Mango llamativo */
     background-color: #CC0000;
     border: 4px solid #FFD700;
     position: absolute;
     touch-action: none;
     box-shadow: 0 0 5px #FFFFFF;
 }
+
 .action-button {
     position: fixed;
     bottom: 50px;
@@ -317,8 +474,7 @@ body {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    /* Estilo Retro */
-    background-color: #00FFFF; /* CIAN - Color de disparo */
+    background-color: #00FFFF;
     border: 5px solid #000;
     color: #000;
     font-size: 1.2em;
@@ -333,6 +489,7 @@ body {
     display: none;
     z-index: 40;
 }
+
 .action-button:active {
     transform: scale(0.9);
     box-shadow: 0 0 5px #00FFFF, inset 0 0 5px #FFFFFF;
@@ -340,6 +497,7 @@ body {
 </style>
 </head>
 <body>
+
 <div class="background-pattern" id="backgroundPattern"></div>
 <h1 id="mainTitle">EL SANTA<br>DEFENDER</h1>
 
@@ -355,12 +513,25 @@ body {
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 </div>
 
+<!-- NUEVO: Modal para Game Over con Premios -->
+<div id="gameOverModal">
+    <div id="gameOverContent">
+        <h2 id="gameOverTitle">GAME OVER</h2>
+        <p id="gameOverMessage"></p>
+        <div id="gameOverScore"></div>
+        <div id="premiumButtonContainer"></div>
+        <button id="restartButton">JUGAR DE NUEVO</button>
+    </div>
+</div>
+
 <button id="audioToggle">🔊</button>
+
 <div class="controls" id="mobileControls">
     <div class="joystick-container" id="joystickContainer">
         <div class="joystick-handle" id="joystickHandle"></div>
     </div>
 </div>
+
 <div class="action-button" id="shootButton">FUEGO</div>
 
 <script>
@@ -376,22 +547,28 @@ const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 // Estados del Juego
 let gameState = 'TITLE';
 
-// Referencias a los nuevos elementos de la portada
+// Referencias a elementos
 const mainTitle = document.getElementById('mainTitle');
 const startButton = document.getElementById('startButton');
 const instructionsDiv = document.getElementById('instructions');
 const gameContainer = document.getElementById('gameContainer');
 const titleElementsContainer = document.getElementById('titleElementsContainer');
 const backgroundPattern = document.getElementById('backgroundPattern');
-
-// Referencias a los controles y el botón de audio
 const controls = document.getElementById('mobileControls');
 const shootButton = document.getElementById('shootButton');
 const joystickContainer = document.getElementById('joystickContainer');
 const joystickHandle = document.getElementById('joystickHandle');
 const audioToggle = document.getElementById('audioToggle');
 
-// Constantes del juego (se mantienen)
+// NUEVO: Referencias para el modal de Game Over con Premios
+const gameOverModal = document.getElementById('gameOverModal');
+const gameOverTitle = document.getElementById('gameOverTitle');
+const gameOverMessage = document.getElementById('gameOverMessage');
+const gameOverScore = document.getElementById('gameOverScore');
+const premiumButtonContainer = document.getElementById('premiumButtonContainer');
+const restartButton = document.getElementById('restartButton');
+
+// Constantes del juego
 const PLAYER_SPEED = 4;
 const BULLET_SPEED = 8;
 const JOYSTICK_RADIUS = 75;
@@ -413,26 +590,36 @@ const HEAL_SCORE_HIT = 1000;
 let lastHealScore = 0;
 const GLOW_DURATION = 30;
 
-// NUEVO: Constantes para la BOMBA - MODIFICADO
-const BOMBA_SCORE_HIT = 500;
-const BOMBA_DURATION = 420; // 7 segundos a 60 FPS (antes 300)
-const BOMBA_SIZE = 35; // Aumentado de 25 a 35px
+// NUEVO: Constantes para premios
+const PREMIO_1_PUNTAJE = 1000;
+const PREMIO_2_PUNTAJE = 2000;
+const PREMIO_3_PUNTAJE = 3000;
 
-// Objetos del juego (se mantienen)
+// REEMPLAZA ESTOS IDs CON LOS DE TUS ARCHIVOS REALES EN GOOGLE DRIVE
+const PDF_URLS = {
+    1000: 'https://drive.google.com/uc?export=download&id=1-Zu4na5y9GBs9S3EOsbvai8-rLlT2M-u',
+    2000: 'https://drive.google.com/uc?export=download&id=1aIwUHL3_N1kUkFiKnw54eampLpfB2iml', 
+    3000: 'https://drive.google.com/uc?export=download&id=1y8-vpZ4HacqPq4LqdfVh_s1iSDb7mvvO'
+};
+
+// NUEVO: Constantes para BOMBA
+const BOMBA_SCORE_HIT = 500;
+const BOMBA_DURATION = 420;
+const BOMBA_SIZE = 35;
+
+// Objetos del juego
 let santa = {
     x: BASE_W / 2, y: BASE_H / 2, size: 20, color: 'red', health: 10, maxHealth: 10,
     dirX: 0, dirY: 0, shooting: false, lastShotTime: 0, fireRate: 200, frame: 0,
     invincible: false, invincibleTimer: 0, hitTimer: 0
 };
-
 const ENEMY_BASE_SIZE = 18;
-
 let tree = {
     x: BASE_W / 2, y: BASE_H / 2, size: 40, color: '#00aa00', health: 50, maxHealth: 50,
     healingGlowTimer: 0, damageGlitchTimer: 0
 };
-
 const treeHealthMax = tree.maxHealth;
+
 let bullets = [];
 let enemies = [];
 let explosions = [];
@@ -445,13 +632,11 @@ let dialogue = {
     message: "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.",
     duration: PHRASE_DURATION, powerUpMessage: null
 };
-
 const invincibilityPhrases = [
     "¡Fuera de aquí, parásitos capitalistas!",
     "¡El capital no puede con la magia de un Santa sindicalizado!",
-    "¡El único regalo que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
+    "¡El único regago que daré es esta paliza! ¡Por un Polo Norte libre de explotación!"
 ];
-
 const sarcasticPhrases = [
     { min: 40, phrases: [
         "¡Luchando por el árbol, el único bien público que queda en pie!",
@@ -475,10 +660,9 @@ const sarcasticPhrases = [
         "¡El verdadero regalo es un sistema que funcione, no más juguetes!"
     ]}
 ];
-
 let timeSinceLastPhrase = 0;
 
-// NUEVO: Variables para la BOMBA
+// NUEVO: Variables para BOMBA
 let bomba = {
     active: false,
     x: 0,
@@ -488,7 +672,7 @@ let bomba = {
 };
 let lastBombaScore = 0;
 
-// Audio (se mantiene)
+// Audio
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const masterGain = audioContext.createGain();
 masterGain.connect(audioContext.destination);
@@ -522,12 +706,13 @@ function startBackgroundMusic() {
         }
         backgroundMusicSource = null;
     }
-
+    
     const playSequence = (time) => {
         if (gameState !== 'PLAYING' || isMuted) {
             backgroundMusicSource = null;
             return;
         }
+        
         let currentTime = time;
         backgroundMusicSource = audioContext.createOscillator();
         backgroundMusicSource.type = 'square';
@@ -535,6 +720,7 @@ function startBackgroundMusic() {
         musicGain.gain.setValueAtTime(0.4, audioContext.currentTime);
         backgroundMusicSource.connect(musicGain);
         musicGain.connect(masterGain);
+        
         melody.forEach(note => {
             const duration = note.duration * tempo;
             if (note.freq > 0) {
@@ -546,6 +732,7 @@ function startBackgroundMusic() {
             }
             currentTime += duration;
         });
+        
         backgroundMusicSource.start(time);
         backgroundMusicSource.stop(currentTime);
         backgroundMusicSource.onended = () => {
@@ -556,6 +743,7 @@ function startBackgroundMusic() {
             }
         };
     };
+    
     playSequence(audioContext.currentTime);
 }
 
@@ -564,13 +752,16 @@ function playSound(frequency, duration, type, endFrequency = frequency, volume =
     if (audioContext.state === 'suspended') {
         audioContext.resume();
     }
+    
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    
     if (endFrequency !== frequency) {
         oscillator.frequency.linearRampToValueAtTime(endFrequency, audioContext.currentTime + duration);
     }
+    
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
     oscillator.connect(gainNode);
@@ -593,6 +784,11 @@ function playPowerUpSound() {
 
 function playHealSound() {
     playSound(400, 0.15, 'sine', 800, 0.8);
+}
+
+// NUEVO: Sonido para premio
+function playPremioSound() {
+    playSound(600, 0.3, 'sine', 900, 1.0);
 }
 
 function toggleAudio() {
@@ -621,7 +817,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// --- CLASE EXPLOSIÓN (Se mantiene) ---
+// --- CLASE EXPLOSIÓN ---
 class Explosion {
     constructor(x, y, color) {
         this.particles = [];
@@ -637,6 +833,7 @@ class Explosion {
             });
         }
     }
+    
     update() {
         this.particles.forEach(p => {
             p.x += p.vx;
@@ -646,6 +843,7 @@ class Explosion {
         this.particles = this.particles.filter(p => p.life > 0);
         return this.particles.length > 0;
     }
+    
     draw() {
         this.particles.forEach(p => {
             ctx.fillStyle = p.color;
@@ -670,6 +868,7 @@ class BigExplosion {
             });
         }
     }
+    
     update() {
         this.particles.forEach(p => {
             p.x += p.vx;
@@ -679,6 +878,7 @@ class BigExplosion {
         this.particles = this.particles.filter(p => p.life > 0);
         return this.particles.length > 0;
     }
+    
     draw() {
         this.particles.forEach(p => {
             ctx.fillStyle = p.color;
@@ -687,7 +887,7 @@ class BigExplosion {
     }
 }
 
-// --- CLASE PARA TEXTOS FLOTANTES (Se mantiene) ---
+// --- CLASE PARA TEXTOS FLOTANTES ---
 class FloatingText {
     constructor(x, y, text, color) {
         this.x = x;
@@ -698,11 +898,13 @@ class FloatingText {
         this.life = 60;
         this.maxLife = 60;
     }
+    
     update() {
         this.y += this.vy;
         this.life--;
         return this.life > 0;
     }
+    
     draw() {
         const alpha = this.life / this.maxLife;
         ctx.globalAlpha = alpha;
@@ -726,6 +928,7 @@ function resizeGame() {
     let newW, newH;
     const maxContainerW = viewportW * 0.98;
     const maxContainerH = viewportH * 0.98;
+    
     if (maxContainerW / maxContainerH > aspectR) {
         newH = maxContainerH;
         newW = maxContainerH * aspectR;
@@ -733,6 +936,7 @@ function resizeGame() {
         newW = maxContainerW;
         newH = maxContainerW / aspectR;
     }
+    
     gameContainer.style.width = newW + 'px';
     gameContainer.style.height = newH + 'px';
     W = BASE_W;
@@ -744,19 +948,18 @@ function resizeGame() {
 window.addEventListener('resize', resizeGame);
 resizeGame();
 
-// --- 4. MANEJO DE EVENTOS (Título y Controles) ---
+// --- 4. MANEJO DE EVENTOS ---
 function handleStartGame() {
     if (gameState === 'TITLE') {
         audioContext.resume();
         playSound(440, 0.01, 'sine', 440, 0);
         gameState = 'PLAYING';
-        // OCULTAR ELEMENTOS HTML DE LA PORTADA (usan fixed/absolute)
         titleElementsContainer.style.display = 'none';
         mainTitle.style.display = 'none';
-        // CLAVE: Pausar la animación del fondo
         backgroundPattern.classList.add('paused');
         resetGame();
         startBackgroundMusic();
+        
         if (isMobile) {
             controls.style.display = 'block';
             shootButton.style.display = 'flex';
@@ -765,34 +968,147 @@ function handleStartGame() {
     }
 }
 
-// Lógica de inicio ahora ligada al botón
 startButton.addEventListener('click', handleStartGame);
 startButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
     handleStartGame();
 });
 
-// --- Llenar las instrucciones de la portada ---
 function fillInstructions() {
     const instructionsContent = isMobile ?
         `<h3>CONTROLES MÓVIL</h3>
-        <p><strong>Joystick:</strong> Mover a Santa</p>
-        <p><strong>FUEGO:</strong> Disparar</p>
-        <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
-        <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>` :
+         <p><strong>Joystick:</strong> Mover a Santa</p>
+         <p><strong>FUEGO:</strong> Disparar</p>
+         <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
+         <p><strong>PREMIOS:</strong> +1,000 +2,000 +3,000 pts</p>
+         <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>` :
         `<h3>CONTROLES PC</h3>
-        <p><strong>WASD / Flechas:</strong> Mover</p>
-        <p><strong>Espacio / Click Izq:</strong> Disparar</p>
-        <p><strong>TAB:</strong> Silenciar Audio</p>
-        <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
-        <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>`;
-    
+         <p><strong>WASD / Flechas:</strong> Mover</p>
+         <p><strong>Espacio / Click Izq:</strong> Disparar</p>
+         <p><strong>TAB:</strong> Silenciar Audio</p>
+         <p><strong>BOMBA:</strong> ¡Colecciona cada 500 pts!</p>
+         <p><strong>PREMIOS:</strong> +1,000 +2,000 +3,000 pts</p>
+         <p><strong>Meta:</strong> ¡Defiende el Árbol!</p>`;
     instructionsDiv.innerHTML = instructionsContent;
 }
 
 fillInstructions();
 
-// --- Controles de juego (Joystick y Teclado) ---
+// --- NUEVO: SISTEMA DE PREMIOS EN GAME OVER ---
+function determinarPremio(puntos) {
+    if (puntos >= PREMIO_3_PUNTAJE) {
+        return {
+            nivel: 3,
+            mensaje: "¡LEGENDARIO DEFENSOR! Has superado los 3,000 puntos. ¡Eres una verdadera leyenda del Polo Norte!",
+            archivo: "Santadefender-premio3.pdf",
+            textoBoton: "DESCARGAR PREMIO 3 - LEYENDA",
+            url: PDF_URLS[3000]
+        };
+    } else if (puntos >= PREMIO_2_PUNTAJE) {
+        return {
+            nivel: 2,
+            mensaje: "¡GRAN DEFENSOR! Has alcanzado más de 2,000 puntos. ¡Tu habilidad es impresionante!",
+            archivo: "Santadefender-premio2.pdf",
+            textoBoton: "DESCARGAR PREMIO 2 - EXPERTO",
+            url: PDF_URLS[2000]
+        };
+    } else if (puntos >= PREMIO_1_PUNTAJE) {
+        return {
+            nivel: 1,
+            mensaje: "¡BUEN DEFENSOR! Has superado los 1,000 puntos. ¡Sigue así!",
+            archivo: "Santadefender-premio1.pdf",
+            textoBoton: "DESCARGAR PREMIO 1 - NOVATO",
+            url: PDF_URLS[1000]
+        };
+    } else {
+        return {
+            nivel: 0,
+            mensaje: "¡Sigue practicando! Intenta llegar a los 1,000 puntos para ganar tu primer premio.",
+            archivo: null,
+            textoBoton: null,
+            url: null
+        };
+    }
+}
+
+function mostrarGameOverConPremio(razon) {
+    // Detener música
+    if (backgroundMusicSource) {
+        try { backgroundMusicSource.stop(); } catch (e) {}
+        backgroundMusicSource = null;
+    }
+    
+    // Determinar premio según puntaje
+    const premio = determinarPremio(score);
+    
+    // Configurar mensajes
+    let mensajeFinal = "";
+    if (razon === 'santa') {
+        mensajeFinal = `¡Santa ha sido sobrepasado!<br>${premio.mensaje}`;
+    } else {
+        mensajeFinal = `¡El árbol ha sido talado!<br>${premio.mensaje}`;
+    }
+    
+    gameOverMessage.innerHTML = mensajeFinal;
+    gameOverScore.textContent = `PUNTUACIÓN FINAL: ${score} PUNTOS`;
+    
+    // Limpiar botones anteriores
+    premiumButtonContainer.innerHTML = "";
+    
+    // Agregar botón de premio si corresponde
+    if (premio.nivel > 0) {
+        const botonPremio = document.createElement('a');
+        botonPremio.href = premio.url;
+        botonPremio.target = "_blank";
+        botonPremio.download = premio.archivo;
+        botonPremio.className = "premium-download-button";
+        botonPremio.textContent = premio.textoBoton;
+        premiumButtonContainer.appendChild(botonPremio);
+        
+        // Reproducir sonido de premio
+        playPremioSound();
+    }
+    
+    // Mostrar modal
+    gameOverModal.style.display = "flex";
+    
+    // Pausar animación de fondo
+    backgroundPattern.classList.remove('paused');
+}
+
+// Evento para reiniciar juego
+restartButton.addEventListener('click', () => {
+    gameOverModal.style.display = "none";
+    gameState = 'TITLE';
+    resetGame();
+    titleElementsContainer.style.display = 'flex';
+    mainTitle.style.display = 'block';
+    
+    if (isMobile) {
+        controls.style.display = 'none';
+        shootButton.style.display = 'none';
+    }
+    audioToggle.style.display = 'none';
+});
+
+// Cerrar modal si se hace clic fuera del contenido
+gameOverModal.addEventListener('click', (e) => {
+    if (e.target === gameOverModal) {
+        gameOverModal.style.display = "none";
+        gameState = 'TITLE';
+        resetGame();
+        titleElementsContainer.style.display = 'flex';
+        mainTitle.style.display = 'block';
+        
+        if (isMobile) {
+            controls.style.display = 'none';
+            shootButton.style.display = 'none';
+        }
+        audioToggle.style.display = 'none';
+    }
+});
+
+// --- Controles de juego ---
 let keys = {};
 if (!isMobile) {
     window.addEventListener('keydown', (e) => {
@@ -800,15 +1116,18 @@ if (!isMobile) {
             keys[e.code] = true;
         }
     });
+    
     window.addEventListener('keyup', (e) => {
         if (gameState === 'PLAYING') {
             keys[e.code] = false;
             if (e.code === 'Space') santa.shooting = false;
         }
     });
+    
     window.addEventListener('mousedown', (e) => {
         if (e.button === 0 && gameState === 'PLAYING') santa.shooting = true;
     });
+    
     window.addEventListener('mouseup', (e) => {
         if (e.button === 0 && gameState === 'PLAYING') santa.shooting = false;
     });
@@ -816,6 +1135,7 @@ if (!isMobile) {
 
 let joystickActive = false;
 let startX, startY;
+
 if (isMobile) {
     joystickContainer.addEventListener('touchstart', (e) => {
         if (gameState !== 'PLAYING') return;
@@ -825,6 +1145,7 @@ if (isMobile) {
         startX = touch.clientX;
         startY = touch.clientY;
     });
+    
     joystickContainer.addEventListener('touchmove', (e) => {
         if (!joystickActive || gameState !== 'PLAYING') return;
         const touch = e.touches[0];
@@ -834,27 +1155,33 @@ if (isMobile) {
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         let finalX = deltaX;
         let finalY = deltaY;
+        
         if (distance > JOYSTICK_RADIUS) {
             finalX = (deltaX / distance) * JOYSTICK_RADIUS;
             finalY = (deltaY / distance) * JOYSTICK_RADIUS;
         }
+        
         joystickHandle.style.transform = `translate(${finalX}px, ${finalY}px)`;
         santa.dirX = finalX / JOYSTICK_RADIUS;
         santa.dirY = finalY / JOYSTICK_RADIUS;
     });
+    
     const resetJoystick = () => {
         joystickActive = false;
         santa.dirX = 0;
         santa.dirY = 0;
         joystickHandle.style.transform = `translate(0px, 0px)`;
     };
+    
     joystickContainer.addEventListener('touchend', resetJoystick);
     joystickContainer.addEventListener('touchcancel', resetJoystick);
+    
     shootButton.addEventListener('touchstart', (e) => {
         if (gameState !== 'PLAYING') return;
         e.preventDefault();
         santa.shooting = true;
     });
+    
     shootButton.addEventListener('touchend', (e) => {
         if (gameState !== 'PLAYING') return;
         e.preventDefault();
@@ -862,18 +1189,21 @@ if (isMobile) {
     });
 }
 
-// --- 5. LÓGICA DEL JUEGO (UPDATE - Se mantiene) ---
+// --- 5. LÓGICA DEL JUEGO ---
 function handleShooting(deltaTime) {
     const currentFireRate = (santa.invincibleTimer > 0) ? 50 : santa.fireRate;
-    if ((!isMobile && (keys['Space'] || santa.shooting)) || (isMobile && santa.shooting) || (santa.invincibleTimer > 0)) {
+    if ((!isMobile && (keys['Space'] || santa.shooting)) || 
+        (isMobile && santa.shooting) || 
+        (santa.invincibleTimer > 0)) {
+        
         const currentTime = Date.now();
         if (currentTime - santa.lastShotTime > currentFireRate) {
-            // CÁLCULO DE LA DIRECCIÓN HACIA EL CENTRO DEL ÁRBOL
             const dx = tree.x - santa.x;
             const dy = tree.y - santa.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const nx = dx / dist; // Componente X de dirección normalizada
-            const ny = dy / dist; // Componente Y de dirección normalizada
+            const nx = dx / dist;
+            const ny = dy / dist;
+            
             bullets.push({
                 x: santa.x,
                 y: santa.y,
@@ -882,6 +1212,7 @@ function handleShooting(deltaTime) {
                 dirX: nx,
                 dirY: ny
             });
+            
             santa.lastShotTime = currentTime;
             playSound(700, 0.05, 'square');
         }
@@ -893,6 +1224,7 @@ function updateBullets() {
         const bullet = bullets[i];
         bullet.x += bullet.dirX * BULLET_SPEED;
         bullet.y += bullet.dirY * BULLET_SPEED;
+        
         let hit = false;
         for (let j = enemies.length - 1; j >= 0; j--) {
             const enemy = enemies[j];
@@ -908,6 +1240,7 @@ function updateBullets() {
                 break;
             }
         }
+        
         if (!hit && (bullet.x < 0 || bullet.x > W || bullet.y < 0 || bullet.y > H)) {
             bullets.splice(i, 1);
         }
@@ -925,6 +1258,7 @@ function updatePowerUp(deltaTime) {
             dialogue.powerUpMessage = null;
         }
     }
+    
     if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
         santa.health = santa.maxHealth;
         santa.invincible = true;
@@ -943,6 +1277,7 @@ function checkHealHit() {
         const healAmount = tree.maxHealth * 0.5;
         const oldHealth = tree.health;
         const newHealth = Math.min(tree.maxHealth, tree.health + healAmount);
+        
         if (newHealth > oldHealth) {
             tree.health = newHealth;
             dialogue.message = `¡HITO! El árbol se ha regenerado un 50%. HP: ${tree.health}`;
@@ -953,15 +1288,14 @@ function checkHealHit() {
     }
 }
 
-// NUEVO: Verificar si aparece la bomba
+// NUEVO: Funciones para BOMBA
 function checkBombaSpawn() {
     if (score >= lastBombaScore + BOMBA_SCORE_HIT && !bomba.active) {
         lastBombaScore += BOMBA_SCORE_HIT;
-        // Posición aleatoria dentro de la arena (evitando bordes)
         bomba.x = Math.random() * (W - 100) + 50;
         bomba.y = Math.random() * (H - 100) + 50;
         bomba.active = true;
-        bomba.timer = BOMBA_DURATION; // 7 segundos ahora
+        bomba.timer = BOMBA_DURATION;
         bomba.frame = 0;
         dialogue.message = "¡UN ELFO CON BOMBA HA APARECIDO! ¡COLISIONA CON ÉL!";
         dialogue.duration = PHRASE_DURATION;
@@ -969,52 +1303,43 @@ function checkBombaSpawn() {
     }
 }
 
-// NUEVO: Actualizar la bomba
 function updateBomba(deltaTime) {
     if (bomba.active) {
         bomba.timer--;
-        bomba.frame = (bomba.frame + 0.1) % 4; // Animación del elfo
+        bomba.frame = (bomba.frame + 0.1) % 4;
+        
         if (bomba.timer <= 0) {
             bomba.active = false;
             dialogue.message = "¡La bomba ha desaparecido! Espera otros 500 pts.";
             dialogue.duration = PHRASE_DURATION;
         }
-        // Verificar colisión con Santa
+        
         if (checkCollision(santa, {x: bomba.x, y: bomba.y, size: BOMBA_SIZE})) {
             activateBomba();
         }
     }
 }
 
-// NUEVO: Activar el efecto de la bomba
 function activateBomba() {
     let enemiesDestroyed = 0;
-    // Destruir todos los enemigos en pantalla
+    
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        // Crear explosión para cada enemigo
         explosions.push(new BigExplosion(enemy.x, enemy.y, '#FF0000'));
-        // Texto flotante
         floatingTexts.push(new FloatingText(enemy.x, enemy.y, '+50', '#FFFF00'));
-        // Sumar puntos y power-up
         score += 50;
         enemiesDefeatedSincePowerUp++;
         enemiesDestroyed++;
-        // Sonido de explosión
         playExplosion(200 + i * 20);
     }
-    // Limpiar todos los enemigos
+    
     enemies = [];
-    // Efecto visual grande en la posición de la bomba
     explosions.push(new BigExplosion(bomba.x, bomba.y, '#FF9900'));
-    // Mensaje de diálogo
     dialogue.message = `¡BOOM! ${enemiesDestroyed} enemigos destruidos. +${enemiesDestroyed * 50} pts!`;
     dialogue.duration = PHRASE_DURATION;
-    // Sonido especial de bomba
     playBombaSound();
-    // Desactivar la bomba
     bomba.active = false;
-    // Verificar si se activa el power-up de invencibilidad
+    
     if (enemiesDefeatedSincePowerUp >= ENEMIES_FOR_POWERUP) {
         santa.health = santa.maxHealth;
         santa.invincible = true;
@@ -1029,6 +1354,7 @@ function activateBomba() {
 
 function updatePlayerMovement() {
     const originalY = BASE_H / 2 + santa.y - (BASE_H / 2);
+    
     if (!isMobile) {
         santa.dirX = 0;
         santa.dirY = 0;
@@ -1037,11 +1363,14 @@ function updatePlayerMovement() {
         if (keys['KeyW'] || keys['ArrowUp']) santa.dirY = -1;
         if (keys['KeyS'] || keys['ArrowDown']) santa.dirY = 1;
     }
+    
     const magnitude = Math.sqrt(santa.dirX * santa.dirX + santa.dirY * santa.dirY);
+    
     if (santa.hitTimer > 0) {
         santa.y -= 3 * (santa.hitTimer / HIT_DURATION);
         santa.hitTimer--;
     }
+    
     if (magnitude === 0 && santa.hitTimer === 0) {
         santa.y += Math.sin(gameFrame * 0.05) * 0.2;
         santa.frame = 0;
@@ -1053,6 +1382,7 @@ function updatePlayerMovement() {
         santa.y += ny * speed;
         santa.frame = (santa.frame + 0.1) % 2;
     }
+    
     santa.x = Math.max(santa.size / 2, Math.min(W - santa.size / 2, santa.x));
     santa.y = Math.max(santa.size / 2, Math.min(H - santa.size / 2, santa.y));
 }
@@ -1078,6 +1408,7 @@ function spawnEnemies() {
         let totalWeight = ENEMY_TYPES.reduce((sum, type) => sum + type.spawnWeight, 0);
         let randomValue = Math.random() * totalWeight;
         let selectedType = ENEMY_TYPES[0];
+        
         for (const type of ENEMY_TYPES) {
             randomValue -= type.spawnWeight;
             if (randomValue <= 0) {
@@ -1085,15 +1416,18 @@ function spawnEnemies() {
                 break;
             }
         }
+        
         const size = ENEMY_BASE_SIZE;
         const edge = Math.floor(Math.random() * 4);
         let x, y;
+        
         switch (edge) {
             case 0: x = Math.random() * W; y = -size; break;
             case 1: x = W + size; y = Math.random() * H; break;
             case 2: x = Math.random() * W; y = H + size; break;
             case 3: x = -size; y = Math.random() * H; break;
         }
+        
         enemies.push({
             x: x,
             y: y,
@@ -1113,31 +1447,24 @@ function updateEnemies() {
         const dist = Math.sqrt(dx * dx + dy * dy);
         const nx = dx / dist;
         const ny = dy / dist;
+        
         enemy.x += nx * enemy.speed;
         enemy.y += ny * enemy.speed;
         enemy.walkFrame = (enemy.walkFrame + 0.1 * enemy.speed) % 3;
+        
         let destroyed = false;
+        
         if (checkCollision(enemy, santa)) {
             if (!santa.invincible) {
                 santa.health -= 1;
                 santa.hitTimer = HIT_DURATION;
                 explosions.push(new Explosion(enemy.x, enemy.y, 'white'));
                 playSound(150, 0.1, 'square', 100);
+                
                 if (santa.health <= 0) {
-                    alert('GAME OVER! Santa ha sido sobrepasado. Puntuación: ' + score);
-                    playSound(200, 1.0, 'sine', 50);
-                    gameState = 'TITLE';
-                    resetGame();
-                    // MOSTRAR ELEMENTOS HTML DE LA PORTADA
-                    titleElementsContainer.style.display = 'flex';
-                    mainTitle.style.display = 'block';
-                    // CLAVE: Reanudar la animación del fondo
-                    backgroundPattern.classList.remove('paused');
-                    if (isMobile) {
-                        controls.style.display = 'none';
-                        shootButton.style.display = 'none';
-                    }
-                    audioToggle.style.display = 'none';
+                    // NUEVO: Mostrar modal de Game Over con premio
+                    mostrarGameOverConPremio('santa');
+                    gameState = 'GAME_OVER';
                     return;
                 }
             } else {
@@ -1146,28 +1473,18 @@ function updateEnemies() {
             enemies.splice(i, 1);
             destroyed = true;
         }
+        
         if (!destroyed && checkCollision(enemy, tree)) {
             tree.health -= 1;
-            // CLAVE: Activar el temporizador de glitch
             tree.damageGlitchTimer = GLITCH_DURATION;
             enemies.splice(i, 1);
             floatingTexts.push(new FloatingText(tree.x, tree.y - tree.size * 0.8, '-1', '#FF0000'));
             explosions.push(new Explosion(enemy.x, enemy.y, '#990000'));
+            
             if (tree.health <= 0) {
-                alert('GAME OVER! El árbol ha sido talado. Puntuación: ' + score);
-                playSound(200, 1.0, 'sine', 50);
-                gameState = 'TITLE';
-                resetGame();
-                // MOSTRAR ELEMENTOS HTML DE LA PORTADA
-                titleElementsContainer.style.display = 'flex';
-                mainTitle.style.display = 'block';
-                // CLAVE: Reanudar la animación del fondo
-                backgroundPattern.classList.remove('paused');
-                if (isMobile) {
-                    controls.style.display = 'none';
-                    shootButton.style.display = 'none';
-                }
-                audioToggle.style.display = 'none';
+                // NUEVO: Mostrar modal de Game Over con premio
+                mostrarGameOverConPremio('arbol');
+                gameState = 'GAME_OVER';
                 return;
             }
         }
@@ -1178,6 +1495,7 @@ function updateDialogue(deltaTime) {
     if (dialogue.duration > 0) {
         dialogue.duration -= (deltaTime / (1000 / 60));
     }
+    
     if (santa.invincibleTimer > 0 && dialogue.powerUpMessage && dialogue.duration <= 0) {
         if (Math.random() < INVINCIBILITY_PHRASE_CHANCE) {
             dialogue.message = dialogue.powerUpMessage;
@@ -1185,7 +1503,9 @@ function updateDialogue(deltaTime) {
         }
         return;
     }
+    
     timeSinceLastPhrase += deltaTime;
+    
     if (timeSinceLastPhrase > PHRASE_INTERVAL && dialogue.duration <= 0 && santa.invincibleTimer <= 0) {
         let eligiblePhrases = [];
         for(const group of sarcasticPhrases) {
@@ -1194,6 +1514,7 @@ function updateDialogue(deltaTime) {
                 break;
             }
         }
+        
         if (eligiblePhrases.length > 0) {
             const newPhrase = eligiblePhrases[Math.floor(Math.random() * eligiblePhrases.length)];
             dialogue.message = newPhrase;
@@ -1207,6 +1528,7 @@ function checkCollision(objA, objB) {
     const sizeA = objA.size || 0;
     const sizeB = objB.size || 0;
     const overlap = 0.8;
+    
     return objA.x < objB.x + sizeB * overlap &&
            objA.x + sizeA * overlap > objB.x &&
            objA.y < objB.y + sizeB * overlap &&
@@ -1224,18 +1546,20 @@ function updateGame(deltaTime) {
     updateEnemies();
     updateDialogue(deltaTime);
     checkHealHit();
-    checkBombaSpawn(); // NUEVO: Verificar si aparece la bomba
-    updateBomba(deltaTime); // NUEVO: Actualizar la bomba
+    checkBombaSpawn();
+    updateBomba(deltaTime);
     gameFrame++;
+    
     if (tree.healingGlowTimer > 0) {
         tree.healingGlowTimer--;
     }
+    
     if (tree.damageGlitchTimer > 0) {
         tree.damageGlitchTimer--;
     }
 }
 
-// --- 6. RENDERIZADO (DRAW) ---
+// --- 6. RENDERIZADO ---
 function drawRect(x, y, w, h, color) {
     ctx.fillStyle = color;
     ctx.fillRect(x - w / 2, y - h / 2, w, h);
@@ -1259,20 +1583,25 @@ function drawSanta(x, y, size, frame) {
     if (santa.invincible && Math.floor(santa.invincibleTimer / 5) % 2 === 0) {
         return;
     }
+    
     const s = size;
     const halfS = s / 2;
     const p = s / 20;
     drawShadow(x, y + halfS + p * 6, s * 1.4, s * 0.8);
+    
     let legOffset = 0;
     if (santa.dirX !== 0 || santa.dirY !== 0) {
         legOffset = (Math.floor(frame) === 0) ? s * 0.15 : -s * 0.15;
     }
+    
     let bodyOffset = 0;
     if (santa.hitTimer > 0) {
         bodyOffset = -s * 0.1;
     }
+    
     const headYOffset = -s * 0.2;
     const bodyYOffset = -s * 0.1;
+    
     drawRect(x, y - halfS + p * 2 + headYOffset, s * 0.9, s * 0.4, 'red');
     drawCircle(x + s * 0.35, y - halfS + p + headYOffset, s * 0.15, 'white');
     drawRect(x, y - halfS + p * 5 + headYOffset, s, p * 2, 'white');
@@ -1287,35 +1616,33 @@ function drawSanta(x, y, size, frame) {
     drawRect(x + s * 0.2 + legOffset, y + s * 0.85 + bodyYOffset, s * 0.15, s * 0.2, 'black');
 }
 
-// NUEVO: Dibujar el elfo con bomba - MODIFICADO (tamaño más grande)
+// NUEVO: Dibujar el elfo con bomba
 function drawBomba() {
     if (!bomba.active) return;
+    
     const x = bomba.x;
     const y = bomba.y;
-    const s = BOMBA_SIZE; // 35px ahora
+    const s = BOMBA_SIZE;
     const halfS = s / 2;
     const p = s / 20;
-    // Sombra
+    
     drawShadow(x, y + halfS + 4, s * 1.2, s * 0.8);
-    // Animación de parpadeo cuando está por desaparecer
+    
     if (bomba.timer < 60) {
         if (Math.floor(bomba.timer / 5) % 2 === 0) return;
     }
-    // Cuerpo del elfo (verde)
+    
     drawRect(x, y - halfS + p * 2, s * 0.9, s * 0.4, '#00AA00');
-    // Sombrero puntiagudo (rojo con blanco)
     drawRect(x, y - halfS - p * 2, s * 0.6, s * 0.3, '#FF0000');
     drawRect(x, y - halfS - p * 4, s * 0.3, s * 0.3, '#FF0000');
     drawRect(x, y - halfS - p, s * 0.7, p * 2, '#FFFFFF');
-    // Cara
     drawRect(x, y - s * 0.1, s * 0.4, s * 0.2, '#FFDBAC');
     drawRect(x - s * 0.1, y - s * 0.2, p, p, 'black');
     drawRect(x + s * 0.1, y - s * 0.2, p, p, 'black');
     drawRect(x, y, s * 0.3, p, '#FF0000');
-    // Cuerpo y ropa
     drawRect(x, y + s * 0.2, s * 1.0, s * 0.4, '#00AA00');
     drawRect(x, y + s * 0.4, s * 0.8, s * 0.2, '#8B4513');
-    // Brazos
+    
     const armFrame = Math.floor(bomba.frame);
     let armOffset = 0;
     if (armFrame === 0 || armFrame === 2) {
@@ -1323,26 +1650,26 @@ function drawBomba() {
     } else {
         armOffset = -s * 0.15;
     }
+    
     drawRect(x - s * 0.4 + armOffset, y + s * 0.1, s * 0.2, s * 0.3, '#00AA00');
     drawRect(x + s * 0.4 - armOffset, y + s * 0.1, s * 0.2, s * 0.3, '#00AA00');
-    // La BOMBA (en las manos)
+    
     const bombSize = s * 0.3;
     const bombColor = bomba.timer < 100 ? '#FF0000' : '#FF9900';
-    // Bomba en mano izquierda
+    
     drawCircle(x - s * 0.4 + armOffset, y + s * 0.25, bombSize, bombColor);
     drawRect(x - s * 0.4 + armOffset, y + s * 0.25 - bombSize/3, bombSize/2, bombSize/4, '#666666');
-    // Bomba en mano derecha
     drawCircle(x + s * 0.4 - armOffset, y + s * 0.25, bombSize, bombColor);
     drawRect(x + s * 0.4 - armOffset, y + s * 0.25 - bombSize/3, bombSize/2, bombSize/4, '#666666');
-    // Mecha parpadeante
+    
     if (Math.floor(gameFrame / 10) % 2 === 0) {
         drawRect(x - s * 0.4 + armOffset, y + s * 0.25 - bombSize, bombSize/3, bombSize/2, '#FFFF00');
         drawRect(x + s * 0.4 - armOffset, y + s * 0.25 - bombSize, bombSize/3, bombSize/2, '#FFFF00');
     }
-    // Piernas
+    
     drawRect(x - s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#8B4513');
     drawRect(x + s * 0.15, y + s * 0.6, s * 0.2, s * 0.3, '#8B4513');
-    // Indicador visual del tiempo restante
+    
     if (bomba.timer < 120) {
         const timeAlpha = bomba.timer / 120;
         ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + 0.5 * Math.sin(gameFrame * 0.2)})`;
@@ -1356,29 +1683,26 @@ function drawBomba() {
     }
 }
 
-// NUEVO: Dibuja los personajes y el árbol para la portada (POSICIÓN A ESCALA)
 function drawTitleCharacters() {
-    // Asegura que el canvas siempre se limpie en sus dimensiones actuales
     ctx.clearRect(0, 0, W, H);
-    // Tamaños y offsets que son proporcionales a las dimensiones del canvas (W, H)
+    
     const MIN_DIM = Math.min(W, H);
     const TREE_SIZE = MIN_DIM * 0.12;
     const CHARACTER_SIZE = MIN_DIM * 0.08;
     const OFFSET = W * 0.25;
-    // CLAVE: CENTRAMOS EN EL CENTRO DEL CANVAS
     const CENTER_X = W / 2;
     const CENTER_Y = H / 2;
-    // 1. Árbol (Centro)
+    
     tree.x = CENTER_X;
     tree.y = CENTER_Y;
     tree.size = TREE_SIZE;
     drawTree();
     tree.size = 40;
-    // 2. Santa (Derecha)
+    
     const santaX = CENTER_X + OFFSET;
-    const santaY = CENTER_Y + CHARACTER_SIZE * 0.2; // Pequeño ajuste visual para la base
+    const santaY = CENTER_Y + CHARACTER_SIZE * 0.2;
     drawSanta(santaX, santaY, CHARACTER_SIZE, gameFrame / 5);
-    // 3. Enemigo (Izquierda)
+    
     const enemyX = CENTER_X - OFFSET;
     const enemyY = CENTER_Y + CHARACTER_SIZE * 0.2;
     const e = {
@@ -1388,14 +1712,17 @@ function drawTitleCharacters() {
         color: ENEMY_TYPES[0].color,
         walkFrame: gameFrame / 15
     };
+    
     const s = e.size;
     const color = e.color;
     const halfS = s / 2;
     drawShadow(e.x, e.y + halfS + 4, s * 1.2, s * 0.8);
+    
     const walkFrame = Math.floor(e.walkFrame % 3);
     let legOffsetL = 0;
     let legOffsetR = 0;
     let bodyTilt = 0;
+    
     if (walkFrame === 0) {
         legOffsetL = s * 0.15;
         legOffsetR = -s * 0.15;
@@ -1409,64 +1736,65 @@ function drawTitleCharacters() {
         legOffsetR = s * 0.15;
         bodyTilt = s * 0.05;
     }
+    
     let suitColor = color;
     if (color === '#666666') suitColor = '#444444';
+    
     const headY = e.y - halfS + bodyTilt;
     const hairColor = '#333333';
     const skinColor = '#39ff14';
     const beardColor = '#39ff14';
+    
     drawRect(e.x, headY + s * 0.0, s * 0.8, s * 0.2, hairColor);
     drawRect(e.x, headY + s * 0.25, s * 0.6, s * 0.2, skinColor);
     drawRect(e.x, headY + s * 0.25, s * 0.7, s * 0.2, 'black');
     drawRect(e.x, headY + s * 0.5, s * 0.8, s * 0.25, beardColor);
+    
     const bodyY = e.y + s * 0.45 + bodyTilt * 0.5;
     drawRect(e.x, bodyY, s * 0.8, s * 0.4, suitColor);
     drawRect(e.x, e.y + s * 0.25, s * 0.2, s * 0.1, 'white');
     drawRect(e.x, e.y + s * 0.35, s * 0.1, s * 0.2, color);
+    
     const legY = e.y + s * 0.7;
     drawRect(e.x - s * 0.15 + legOffsetL, legY, s * 0.2, s * 0.3, '#333333');
     drawRect(e.x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333');
 }
 
-// NUEVO: Dibuja la pantalla de título en el canvas
-function drawTitleScreen() {
-    drawTitleCharacters();
-}
-
 function drawGameObjects() {
     ctx.clearRect(0, 0, W, H);
-    // --- INICIO DE EFECTOS DEL ÁRBOL (Glitch) ---
+    
     if (tree.damageGlitchTimer > 0) {
-        // 1. Temblor (Transformación)
-        const shakeX = Math.random() * 4 - 2; // Desplazamiento de -2 a 2
+        const shakeX = Math.random() * 4 - 2;
         const shakeY = Math.random() * 4 - 2;
         ctx.setTransform(1, 0, 0, 1, shakeX, shakeY);
-        // 2. Glitch de Color (Filtro)
         const hue = Math.floor(Math.random() * 360);
         ctx.filter = `hue-rotate(${hue}deg) brightness(1.5)`;
     } else {
         ctx.filter = 'none';
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
-    // --- FIN DE EFECTOS DEL ÁRBOL ---
+    
     ctx.globalAlpha = 1;
     drawTree();
-    // Revertir la transformación y el filtro antes de dibujar otros elementos (enemigos/Santa/HUD)
+    
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.filter = 'none';
+    
     drawEnemies();
     drawBullets();
     drawSanta(santa.x, santa.y, santa.size, santa.frame);
-    drawBomba(); // NUEVO: Dibujar la bomba si está activa
+    drawBomba();
     explosions.forEach(exp => exp.draw());
     floatingTexts.forEach(t => t.draw());
+    
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.filter = 'none';
     ctx.globalAlpha = 1;
-    // --- CORRECCIÓN: Dibujar el diálogo si está activo ---
+    
     if (dialogue.duration > 0) {
         drawDialogueBubble(santa.x, santa.y, dialogue.message);
     }
+    
     drawHUD();
 }
 
@@ -1476,6 +1804,7 @@ function drawTree() {
     drawShadow(tree.x, baseCenterY + 15, treeBaseW * 1.4, treeBaseW * 0.8);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
+    
     const SECTION_HEIGHT_FACTOR = 0.7;
     const SECTION_GAP_FACTOR = 0.4;
     const baseH = treeBaseW * SECTION_HEIGHT_FACTOR;
@@ -1485,23 +1814,31 @@ function drawTree() {
     const totalTreeHeight = h1 + h2 * SECTION_GAP_FACTOR + h3 * SECTION_GAP_FACTOR + tree.size * 0.25;
     const treeTopY = tree.y - totalTreeHeight / 2;
     const Y_TOP_BASE = treeTopY;
+    
     const SECTIONS_CONFIG = [
         { factor: 0.6, height: h3, yCenter: Y_TOP_BASE + h3 / 2 },
         { factor: 0.8, height: h2, yCenter: Y_TOP_BASE + h3 + h2 / 2 - (h2 * SECTION_GAP_FACTOR) },
         { factor: 1.0, height: h1, yCenter: Y_TOP_BASE + h3 + h2 - (h2 * SECTION_GAP_FACTOR * 2) + h1 * 0.1 }
     ];
+    
     const ORNAMENTS = [
-        { x: -10, y: SECTIONS_CONFIG[2].yCenter + 15, color: 'yellow' }, { x: 15, y: SECTIONS_CONFIG[2].yCenter + 30, color: 'red' },
-        { x: -8, y: SECTIONS_CONFIG[1].yCenter + 0, color: 'blue' }, { x: 10, y: SECTIONS_CONFIG[1].yCenter - 10, color: 'magenta' },
-        { x: -5, y: SECTIONS_CONFIG[0].yCenter - 5, color: 'cyan' }, { x: 5, y: SECTIONS_CONFIG[0].yCenter - 15, color: 'yellow' }
+        { x: -10, y: SECTIONS_CONFIG[2].yCenter + 15, color: 'yellow' }, 
+        { x: 15, y: SECTIONS_CONFIG[2].yCenter + 30, color: 'red' },
+        { x: -8, y: SECTIONS_CONFIG[1].yCenter + 0, color: 'blue' }, 
+        { x: 10, y: SECTIONS_CONFIG[1].yCenter - 10, color: 'magenta' },
+        { x: -5, y: SECTIONS_CONFIG[0].yCenter - 5, color: 'cyan' }, 
+        { x: 5, y: SECTIONS_CONFIG[0].yCenter - 15, color: 'yellow' }
     ];
+    
     const trunkY = SECTIONS_CONFIG[2].yCenter + h1 / 2 + tree.size * 0.1;
     drawRect(tree.x, trunkY, tree.size * 0.2, tree.size * 0.3, '#8B4513');
+    
     SECTIONS_CONFIG.forEach((sec) => {
         const w = treeBaseW * sec.factor;
         const h = sec.height;
         const topY = sec.yCenter - h / 2;
         const bottomY = sec.yCenter + h / 2;
+        
         ctx.fillStyle = tree.color;
         ctx.beginPath();
         ctx.moveTo(tree.x, topY);
@@ -1510,11 +1847,14 @@ function drawTree() {
         ctx.closePath();
         ctx.fill();
     });
+    
     const pulse = Math.floor(gameFrame / 10) % 3;
     const lightColors = ['yellow', 'red', 'blue'];
+    
     ORNAMENTS.forEach((ornament, index) => {
         drawCircle(tree.x + ornament.x, ornament.y, tree.size * 0.075, ornament.color);
     });
+    
     drawCircle(tree.x - tree.size * 0.3, SECTIONS_CONFIG[2].yCenter + 0, tree.size * 0.1, lightColors[(pulse + 0) % 3]);
     drawCircle(tree.x + tree.size * 0.25, SECTIONS_CONFIG[1].yCenter - 20, tree.size * 0.1, lightColors[(pulse + 1) % 3]);
     drawCircle(tree.x + 0, SECTIONS_CONFIG[2].yCenter + tree.size * 0.5, tree.size * 0.1, lightColors[(pulse + 2) % 3]);
@@ -1529,11 +1869,14 @@ function drawEnemies() {
         const s = ENEMY_BASE_SIZE * pulse;
         const color = e.color;
         const halfS = s / 2;
+        
         drawShadow(x, y + halfS + 4, s * 1.2, s * 0.8);
+        
         const walkFrame = Math.floor(e.walkFrame);
         let legOffsetL = 0;
         let legOffsetR = 0;
         let bodyTilt = 0;
+        
         if (walkFrame === 0) {
             legOffsetL = s * 0.15;
             legOffsetR = -s * 0.15;
@@ -1547,22 +1890,27 @@ function drawEnemies() {
             legOffsetR = s * 0.15;
             bodyTilt = s * 0.05;
         }
+        
         let suitColor = color;
         if (color === '#666666') suitColor = '#444444';
         else if (color === '#990000') suitColor = '#660000';
         else if (color === '#000066') suitColor = '#000044';
+        
         const headY = y - halfS + bodyTilt;
         const hairColor = '#333333';
         const skinColor = '#39ff14';
         const beardColor = '#39ff14';
+        
         drawRect(x, headY + s * 0.0, s * 0.8, s * 0.2, hairColor);
         drawRect(x, headY + s * 0.25, s * 0.6, s * 0.2, skinColor);
         drawRect(x, headY + s * 0.25, s * 0.7, s * 0.2, 'black');
         drawRect(x, headY + s * 0.5, s * 0.8, s * 0.25, beardColor);
+        
         const bodyY = y + s * 0.45 + bodyTilt * 0.5;
         drawRect(x, bodyY, s * 0.8, s * 0.4, suitColor);
         drawRect(x, y + s * 0.25, s * 0.2, s * 0.1, 'white');
         drawRect(x, y + s * 0.35, s * 0.1, s * 0.2, color);
+        
         const legY = y + s * 0.7;
         drawRect(x - s * 0.15 + legOffsetL, legY, s * 0.2, s * 0.3, '#333333');
         drawRect(x + s * 0.15 + legOffsetR, legY, s * 0.2, s * 0.3, '#333333');
@@ -1579,32 +1927,33 @@ function drawBullets() {
 }
 
 function drawDialogueBubble(x, y, message) {
-    const FONT_SIZE = 12; // Reducido de 14 a 12
-    const MAX_WIDTH = 280; // Ancho máximo en píxeles (no caracteres)
-    const MAX_LINES = 4; // Permitir hasta 4 líneas
+    const FONT_SIZE = 12;
+    const MAX_WIDTH = 280;
+    const MAX_LINES = 4;
     const PADDING = 10;
     const LINE_HEIGHT = FONT_SIZE + 6;
+    
     ctx.font = `${FONT_SIZE}px 'Press Start 2P', monospace`;
     ctx.textAlign = 'center';
-    // Función para dividir el texto en líneas
+    
     function splitTextIntoLines(text, maxWidth) {
         const words = text.split(' ');
         const lines = [];
         let currentLine = '';
+        
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
             const testLine = currentLine ? `${currentLine} ${word}` : word;
             const testWidth = ctx.measureText(testLine).width;
+            
             if (testWidth <= maxWidth) {
                 currentLine = testLine;
             } else {
-                // Si la línea actual no está vacía, la guardamos
                 if (currentLine) {
                     lines.push(currentLine);
                 }
-                // Si la palabra sola es más ancha que el máximo, la dividimos
+                
                 if (ctx.measureText(word).width > maxWidth) {
-                    // Dividir palabra larga
                     let remainingWord = word;
                     while (remainingWord.length > 0) {
                         let segment = '';
@@ -1625,37 +1974,39 @@ function drawDialogueBubble(x, y, message) {
                 }
             }
         }
-        // Añadir la última línea si existe
+        
         if (currentLine) {
             lines.push(currentLine);
         }
+        
         return lines;
     }
-    // Dividir el mensaje en líneas
+    
     let lines = splitTextIntoLines(message, MAX_WIDTH);
-    // Limitar el número de líneas si es necesario
+    
     if (lines.length > MAX_LINES) {
         lines = lines.slice(0, MAX_LINES);
         lines[MAX_LINES - 1] = lines[MAX_LINES - 1].slice(0, -3) + '...';
     }
-    // Calcular el ancho máximo de línea
+    
     let maxLineWidth = 0;
     for (const line of lines) {
         const lineWidth = ctx.measureText(line).width;
         maxLineWidth = Math.max(maxLineWidth, lineWidth);
     }
+    
     const bubbleW = Math.min(maxLineWidth + PADDING * 2, MAX_WIDTH + PADDING * 2);
     const bubbleH = (lines.length * LINE_HEIGHT) + PADDING * 2;
     const bubbleX = x - bubbleW / 2;
     const bubbleY = y - santa.size - bubbleH - 15;
-    // Fondo blanco con borde negro
+    
     ctx.fillStyle = 'white';
     ctx.fillRect(bubbleX, bubbleY, bubbleW, bubbleH);
-    // Borde negro grueso
+    
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 3;
     ctx.strokeRect(bubbleX, bubbleY, bubbleW, bubbleH);
-    // Punta del diálogo (triángulo en la parte inferior)
+    
     ctx.fillStyle = 'white';
     ctx.beginPath();
     ctx.moveTo(x - 8, bubbleY + bubbleH);
@@ -1663,7 +2014,7 @@ function drawDialogueBubble(x, y, message) {
     ctx.lineTo(x, bubbleY + bubbleH + 10);
     ctx.closePath();
     ctx.fill();
-    // Borde de la punta
+    
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1672,10 +2023,10 @@ function drawDialogueBubble(x, y, message) {
     ctx.lineTo(x, bubbleY + bubbleH + 10);
     ctx.closePath();
     ctx.stroke();
-    // Texto negro
+    
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
-    // Dibujar cada línea centrada
+    
     lines.forEach((line, index) => {
         const textY = bubbleY + PADDING + (index * LINE_HEIGHT) + FONT_SIZE;
         ctx.fillText(line, x, textY);
@@ -1683,16 +2034,17 @@ function drawDialogueBubble(x, y, message) {
 }
 
 function drawHUD() {
-    // Configuramos un estilo base para el HUD
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
     ctx.shadowBlur = 5;
-    ctx.lineWidth = 3; // Grosor de los bordes
-    ctx.font = '20px "Press Start 2P", monospace'; // Aplicamos la fuente retro al canvas
-    // ---------------------- Puntuación ----------------------
-    ctx.fillStyle = '#FFD700'; // Color Oro
+    ctx.lineWidth = 3;
+    ctx.font = '20px "Press Start 2P", monospace';
+    
+    // Puntuación
+    ctx.fillStyle = '#FFD700';
     ctx.textAlign = 'left';
     ctx.fillText(`PUNTOS: ${score}`, 10, 30);
-    // ---------------------- Indicador de BOMBA (abajo del contador de puntos) ----------------------
+    
+    // Indicador de BOMBA
     const nextBomba = BOMBA_SCORE_HIT - (score - lastBombaScore);
     if (nextBomba > 0) {
         ctx.fillStyle = '#FF9900';
@@ -1704,60 +2056,67 @@ function drawHUD() {
         const timeLeft = Math.ceil(bomba.timer / 60);
         ctx.fillText(`¡BOMBA! ${timeLeft}s`, 10, 60);
     }
-    // ---------------------- Barra de Vida del ÁRBOL ----------------------
+    
+    // Barra de Vida del ÁRBOL
     const treeHealthRatio = tree.health / tree.maxHealth;
     const barWidth = 300;
-    const barHeight = 20; // Un poco más alta
+    const barHeight = 20;
     const barX = W / 2 - barWidth / 2;
     const barY = 15;
-    // GLOW de curación
+    
     if (tree.healingGlowTimer > 0) {
         const glowAlpha = tree.healingGlowTimer / GLOW_DURATION * 0.7;
         ctx.fillStyle = `rgba(0, 255, 0, ${glowAlpha})`;
         ctx.fillRect(barX - 8, barY - 8, barWidth + 16, barHeight + 16);
     }
-    // Fondo de la barra
+    
     ctx.fillStyle = '#333333';
     ctx.fillRect(barX, barY, barWidth, barHeight);
-    // Relleno de salud
+    
     ctx.fillStyle = treeHealthRatio > 0.5 ? '#00FF00' : (treeHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
     ctx.fillRect(barX, barY, barWidth * treeHealthRatio, barHeight);
-    // Borde Doble
+    
     ctx.strokeStyle = '#000000';
     ctx.strokeRect(barX, barY, barWidth, barHeight);
     ctx.strokeStyle = '#FFFFFF';
     ctx.strokeRect(barX - 1, barY - 1, barWidth + 2, barHeight + 2);
+    
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.fillText(`ÁRBOL`, W / 2, barY + barHeight + 25);
-    // ---------------------- Barra de Vida de SANTA (regresada a su posición original) ----------------------
+    
+    // Barra de Vida de SANTA
     const santaHealthRatio = santa.health / santa.maxHealth;
     const santaBarWidth = 150;
     const santaBarHeight = 15;
     const santaBarX = W - santaBarWidth - 10;
-    const santaBarY = 15; // Regresada a su posición original (arriba)
-    // Fondo de la barra
+    const santaBarY = 15;
+    
     ctx.fillStyle = '#333333';
     ctx.fillRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
-    // Relleno de salud
+    
     ctx.fillStyle = santaHealthRatio > 0.5 ? '#00FFFF' : (santaHealthRatio > 0.2 ? '#FFD700' : '#FF0000');
     ctx.fillRect(santaBarX, santaBarY, santaBarWidth * santaHealthRatio, santaBarHeight);
-    // Borde Doble
+    
     ctx.strokeStyle = '#000000';
     ctx.strokeRect(santaBarX, santaBarY, santaBarWidth, santaBarHeight);
     ctx.strokeStyle = '#FFFFFF';
     ctx.strokeRect(santaBarX - 1, santaBarY - 1, santaBarWidth + 2, santaBarHeight + 2);
+    
     ctx.fillStyle = 'white';
     ctx.textAlign = 'right';
     ctx.fillText(`SANTA`, W - 10, santaBarY + santaBarHeight + 5);
-    // ---------------------- Barra de POWER UP ----------------------
+    
+    // Barra de POWER UP
     const powerBarWidth = 300;
     const powerBarHeight = 15;
     const powerBarX = W / 2 - powerBarWidth / 2;
-    const powerBarY = H - 35; // Más bajo y separado
+    const powerBarY = H - 35;
+    
     let powerColor = '#FF00FF';
     let barFillWidth;
     let barText;
+    
     if (santa.invincibleTimer > 0) {
         const durationRatio = santa.invincibleTimer / POWERUP_DURATION;
         barFillWidth = powerBarWidth * durationRatio;
@@ -1769,45 +2128,50 @@ function drawHUD() {
         powerColor = '#FF00FF';
         barText = `POWER UP: ${enemiesDefeatedSincePowerUp}/${ENEMIES_FOR_POWERUP} ENEMIGOS`;
     }
-    // Fondo de la barra de poder
+    
     ctx.fillStyle = '#333333';
     ctx.fillRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
-    // Relleno de poder (con glow si está activo)
+    
     ctx.fillStyle = powerColor;
     if (santa.invincibleTimer > 0) {
         ctx.shadowColor = powerColor;
         ctx.shadowBlur = 10;
     }
+    
     ctx.fillRect(powerBarX, powerBarY, barFillWidth, powerBarHeight);
-    // Restaurar sombras para el borde
     ctx.shadowBlur = 5;
-    // Borde Doble
+    
     ctx.strokeStyle = '#000000';
     ctx.strokeRect(powerBarX, powerBarY, powerBarWidth, powerBarHeight);
     ctx.strokeStyle = '#FFFFFF';
     ctx.strokeRect(powerBarX - 1, powerBarY - 1, powerBarWidth + 2, powerBarHeight + 2);
-    // Restaurar sombras para el texto
+    
     ctx.shadowBlur = 5;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.fillText(barText, W / 2, powerBarY - 10);
-    // Limpiar sombras para el resto del renderizado
+    
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
 }
 
 // --- 7. BUCLE PRINCIPAL Y RESET ---
 let lastTime = 0;
+
 function gameLoop(timestamp) {
     const deltaTime = timestamp - lastTime;
     lastTime = timestamp;
+    
     if (gameState === 'TITLE') {
         drawTitleCharacters();
     } else if (gameState === 'PLAYING') {
         updateGame(deltaTime);
         drawGameObjects();
+    } else if (gameState === 'GAME_OVER') {
+        // No hacer nada, el modal ya está mostrado
     }
+    
     requestAnimationFrame(gameLoop);
 }
 
@@ -1816,7 +2180,7 @@ function resetGame() {
         try { backgroundMusicSource.stop(); } catch (e) {}
         backgroundMusicSource = null;
     }
-    // CAMBIO CLAVE: Posición de Santa (Inferior Izquierda del Árbol)
+    
     santa.x = BASE_W / 2 - tree.size * 2;
     santa.y = BASE_H / 2 + tree.size * 2;
     santa.frame = 0;
@@ -1824,9 +2188,11 @@ function resetGame() {
     santa.invincible = false;
     santa.invincibleTimer = 0;
     santa.hitTimer = 0;
+    
     tree.health = tree.maxHealth;
     tree.healingGlowTimer = 0;
     tree.damageGlitchTimer = 0;
+    
     score = 0;
     lastHealScore = 0;
     enemies = [];
@@ -1836,13 +2202,17 @@ function resetGame() {
     enemiesDefeatedSincePowerUp = 0;
     powerUpTimer = 0;
     gameFrame = 0;
+    
     dialogue.message = "¡Feliz Navidad! O como lo llama el 1%, 'Temporada de Consumo Forzado'.";
     dialogue.duration = PHRASE_DURATION;
     dialogue.powerUpMessage = null;
     timeSinceLastPhrase = 0;
-    // NUEVO: Resetear la bomba
+    
     bomba.active = false;
     lastBombaScore = 0;
+    
+    // Ocultar modal de Game Over
+    gameOverModal.style.display = "none";
 }
 
 // OCULTAR CONTROLES AL INICIO
@@ -1850,8 +2220,8 @@ if (isMobile) {
     controls.style.display = 'none';
     shootButton.style.display = 'none';
 }
-
 audioToggle.style.display = 'none';
+
 requestAnimationFrame(gameLoop);
 </script>
 </body>
